@@ -74,15 +74,15 @@ const StaffProgress = () => {
                 <th className="center-text">Kode</th>
                 <th>Cabang</th>
                 <th>FSA/MSA</th>
-                <th className="center-text">Release<br/>Voucher</th>
-                <th className="center-text">Unapprove<br/>Pengajuan</th>
-                <th className="center-text">Recalculate<br/>Delinquency</th>
-                <th className="center-text">Tranfer<br/>Pencairan</th>
-                <th className="center-text">Salah<br/>Generate</th>
-                <th className="center-text">PPI Not<br/>Entry</th>
+                <th className="center-text">Rel.<br/>Vouch</th>
+                <th className="center-text">Unappr.<br/>Peng.</th>
+                <th className="center-text">Recalc.<br/>Delinq.</th>
+                <th className="center-text">Trans.<br/>Penc.</th>
+                <th className="center-text">Salah<br/>Gen.</th>
+                <th className="center-text">PPI Not<br/>Ent.</th>
                 <th className="center-text">Validasi</th>
-                <th className="center-text">Tiket<br/>Perbaikan</th>
-                <th style={{ minWidth: '74px' }}>Kinerja KPI</th>
+                <th className="center-text">Tiket<br/>Perb.</th>
+                <th style={{ minWidth: '60px' }}>KPI</th>
                 <th className="center-text">Status</th>
                 <th className="center-text">Aksi</th>
               </tr>
