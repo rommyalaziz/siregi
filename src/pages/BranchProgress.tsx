@@ -65,7 +65,7 @@ const BranchProgress = () => {
                   </td>
                   <td>
                     <button className="icon-btn" title="Lihat Detail" onClick={() => openDrawer(branch)}>
-                      <Eye size={14} />
+                      <Eye size={12} />
                     </button>
                   </td>
                 </tr>

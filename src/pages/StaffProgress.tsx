@@ -133,7 +133,7 @@ const StaffProgress = () => {
                       </td>
                       <td className="center-text">
                         <button className="icon-btn" title="Lihat Detail" onClick={() => openDrawer(staff)}>
-                          <Eye size={14} />
+                          <Eye size={12} />
                         </button>
                       </td>
                     </tr>

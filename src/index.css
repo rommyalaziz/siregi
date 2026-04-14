@@ -21,9 +21,9 @@
   --shadow-lg: 0 16px 24px -4px rgba(0, 0, 0, 0.06), 0 8px 12px -4px rgba(0, 0, 0, 0.04);
   
   /* Border Radius - friendlier and premium */
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
 
   /* Transitions */
@@ -72,7 +72,7 @@ ul {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  padding: 16px;
+  padding: 12px;
   transition: box-shadow var(--transition-fast);
 }
 
@@ -85,9 +85,9 @@ ul {
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
-.gap-2 { gap: 8px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
+.gap-2 { gap: 4px; }
+.gap-4 { gap: 8px; }
+.gap-6 { gap: 12px; }
 .w-full { width: 100%; }
 .h-full { height: 100%; }
 
