@@ -69,7 +69,7 @@ const Login = () => {
             <Building2 size={40} color="#FFFFFF" />
           </div>
           <h1>MAREGI</h1>
-          <p>MSA Performance & Branch Tracker</p>
+          <p>MSA Performance & Branch Tracker Regional I</p>
         </div>
       </div>
 
