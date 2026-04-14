@@ -190,3 +190,20 @@ form input:focus {
     border-left: none;
   }
 }
+
+.login-credit {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: opacity 0.3s ease;
+}
+
+.login-credit:hover {
+  opacity: 1;
+  color: var(--color-primary);
+}
