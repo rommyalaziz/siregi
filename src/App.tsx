@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';

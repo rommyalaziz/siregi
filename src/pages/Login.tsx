@@ -9,6 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -103,8 +104,8 @@ const Login = () => {
               />
             </div>
 
-            <button type="submit" className="login-submit-btn">
-              Login / Masuk
+            <button type="submit" className="login-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Sedang Masuk...' : 'Login / Masuk'}
             </button>
           </form>
         </div>

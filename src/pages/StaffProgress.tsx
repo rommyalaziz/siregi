@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Badge, type BadgeVariant } from '../components/ui/Badge';
 import { ProgressBar } from '../components/ui/ProgressBar';
