@@ -108,6 +108,9 @@ const Login = () => {
               {isLoading ? 'Sedang Masuk...' : 'Login / Masuk'}
             </button>
           </form>
+          <div className="login-credit">
+            Crafted with ❤️ by rommyalaziz
+          </div>
         </div>
       </div>
     </div>
