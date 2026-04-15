@@ -139,6 +139,8 @@ const AdminStaffUpdate = () => {
       const staffInfo = staffList.find(s => s.id === selectedStaffId);
       let avatar_url = avatarPreview;
 
+      console.log('Attempting update for:', selectedStaffId, selectedPeriode);
+
       // 1. Handle File Upload if there's a new file
       if (avatarFile) {
         try {
@@ -151,6 +153,7 @@ const AdminStaffUpdate = () => {
             .upload(filePath, avatarFile, { upsert: true });
 
           if (uploadError) {
+             console.error('Storage Error:', uploadError);
              if (uploadError.message === 'Bucket not found') {
                throw new Error('Penyimpanan foto gagal: Anda belum membuat bucket "avatars" di Supabase Dashboard.');
              }
@@ -176,17 +179,47 @@ const AdminStaffUpdate = () => {
         ...formData
       };
 
-      const { error } = await supabase
-        .from('staff_progress')
-        .upsert(payload, { onConflict: 'id, periode' });
+      console.log('Sending payload:', payload);
 
-      if (error) throw error;
+      // Try UPDATE first
+      const { data: updateData, error: updateError } = await supabase
+        .from('staff_progress')
+        .update(payload)
+        .eq('id', selectedStaffId)
+        .eq('periode', selectedPeriode)
+        .select();
+
+      if (updateError) {
+        console.error('Initial Update Error:', updateError);
+      }
+
+      // If no data updated, try INSERT
+      if (updateError || !updateData || updateData.length === 0) {
+        console.log('Row not found or update failed, attempting INSERT...');
+        const { error: insertError } = await supabase
+          .from('staff_progress')
+          .insert([payload]);
+        
+        if (insertError) {
+          console.error('Insert Error Detail:', insertError);
+          throw insertError;
+        }
+      }
 
       setMessage({ type: 'success', text: `Data ${staffInfo?.name} berhasil diperbarui.` });
       setAvatarFile(null);
     } catch (err: any) {
-      console.error('Update Error:', err);
-      setMessage({ type: 'error', text: err.message || 'Gagal memperbarui data' });
+      console.error('Final Caught Error:', err);
+      // If it's the RLS error, give a more helpful instruction
+      const errorMsg = err.message || 'Gagal memperbarui data';
+      if (errorMsg.includes('row-level security')) {
+        setMessage({ 
+          type: 'error', 
+          text: 'Database masih menolak akses (RLS). Pastikan Anda sudah menjalankan SQL Super Reset di Supabase Dashboard.' 
+        });
+      } else {
+        setMessage({ type: 'error', text: errorMsg });
+      }
     } finally {
       setLoading(false);
     }
