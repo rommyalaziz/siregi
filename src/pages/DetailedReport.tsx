@@ -167,50 +167,50 @@ const DetailedReport = () => {
                 <th colSpan={2}>Nama Staf</th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <Ticket size={12} />
-                    <span>RV</span>
+                    <Ticket size={11} />
+                    <span>RELEASE VOUCHER</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <ShieldAlert size={12} />
-                    <span>UP</span>
+                    <ShieldAlert size={11} />
+                    <span>UNAPPROVE PENGAJUAN</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <RefreshCw size={12} />
-                    <span>RD</span>
+                    <RefreshCw size={11} />
+                    <span>RECALCULATE DELINQUENCY</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <Coins size={12} />
-                    <span>TP</span>
+                    <Coins size={11} />
+                    <span>TRANSFER PENCAIRAN</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <FileX size={12} />
-                    <span>SG</span>
+                    <FileX size={11} />
+                    <span>SALAH GENERATE</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <ClipboardType size={12} />
-                    <span>PPI</span>
+                    <ClipboardType size={11} />
+                    <span>PPI NOT ENTRY</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <CheckCircle2 size={12} />
-                    <span>VAL</span>
+                    <CheckCircle2 size={11} />
+                    <span>VALIDASI</span>
                   </div>
                 </th>
                 <th className="center-text">
                   <div className="header-icon-wrapper">
-                    <Wrench size={12} />
-                    <span>TPK</span>
+                    <Wrench size={11} />
+                    <span>TIKET PERBAIKAN</span>
                   </div>
                 </th>
                 <th className="center-text">PROGRES TREN</th>
