@@ -3,7 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Badge, type BadgeVariant } from '../components/ui/Badge';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Drawer } from '../components/Drawer';
-import { Search, Filter, Eye, Loader2 } from 'lucide-react';
+import { Search, Filter, Eye, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './TableStyles.css';
 
@@ -175,15 +175,55 @@ const StaffProgress = () => {
                 <th className="center-text">Kode</th>
                 <th>Cabang</th>
                 <th colSpan={2}>Nama Staf</th>
-                <th className="center-text">RELEASE<br/>VOUCHER</th>
-                <th className="center-text">UNAPPROVE<br/>PENGAJUAN</th>
-                <th className="center-text">RECALCULATE<br/>DELINQUENCY</th>
-                <th className="center-text">TRANSFER<br/>PENCAIRAN</th>
-                <th className="center-text">SALAH<br/>GENERATE</th>
-                <th className="center-text">PPI NOT<br/>ENTRY</th>
-                <th className="center-text">VALIDASI</th>
-                <th className="center-text">TIKET<br/>PERBAIKAN</th>
-                <th style={{ minWidth: '100px' }}>Point</th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Ticket size={12} />
+                    <span>RV</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <ShieldAlert size={12} />
+                    <span>UP</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <RefreshCw size={12} />
+                    <span>RD</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Coins size={12} />
+                    <span>TP</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <FileX size={12} />
+                    <span>SG</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <ClipboardType size={12} />
+                    <span>PPI</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <CheckCircle2 size={12} />
+                    <span>VAL</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Wrench size={12} />
+                    <span>TPK</span>
+                  </div>
+                </th>
+                <th style={{ minWidth: '85px' }}>Point</th>
                 <th className="center-text">STATUS</th>
                 <th className="center-text">AKSI</th>
               </tr>

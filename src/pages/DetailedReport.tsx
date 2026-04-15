@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Search, Printer, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, Printer, Loader2, TrendingUp, TrendingDown, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { supabase } from '../lib/supabase';
 import './TableStyles.css';
@@ -165,16 +165,56 @@ const DetailedReport = () => {
                 <th className="center-text">Kode</th>
                 <th>Cabang</th>
                 <th colSpan={2}>Nama Staf</th>
-                <th className="center-text">RELEASE<br/>VOUCHER</th>
-                <th className="center-text">UNAPPROVE<br/>PENGAJUAN</th>
-                <th className="center-text">RECALCULATE<br/>DELINQUENCY</th>
-                <th className="center-text">TRANSFER<br/>PENCAIRAN</th>
-                <th className="center-text">SALAH<br/>GENERATE</th>
-                <th className="center-text">PPI NOT<br/>ENTRY</th>
-                <th className="center-text">VALIDASI</th>
-                <th className="center-text">TIKET<br/>PERBAIKAN</th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Ticket size={12} />
+                    <span>RV</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <ShieldAlert size={12} />
+                    <span>UP</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <RefreshCw size={12} />
+                    <span>RD</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Coins size={12} />
+                    <span>TP</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <FileX size={12} />
+                    <span>SG</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <ClipboardType size={12} />
+                    <span>PPI</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <CheckCircle2 size={12} />
+                    <span>VAL</span>
+                  </div>
+                </th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Wrench size={12} />
+                    <span>TPK</span>
+                  </div>
+                </th>
                 <th className="center-text">PROGRES TREN</th>
-                <th style={{ minWidth: '120px' }}>Point (%)</th>
+                <th style={{ minWidth: '85px' }}>Point (%)</th>
               </tr>
             </thead>
             <tbody>
@@ -258,8 +298,8 @@ const DetailedReport = () => {
           .report-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
           @page { margin: 1cm; }
         }
-        .report-view .data-table th { font-size: 9px; padding: 10px 4px; }
-        .report-view .data-table td { padding: 8px 4px; }
+        .report-view .data-table th { font-size: 9px; padding: 6px 4px; }
+        .report-view .data-table td { padding: 4px 4px; }
       `}</style>
     </div>
   );

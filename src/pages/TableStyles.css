@@ -75,10 +75,10 @@
 
 .data-table th,
 .data-table td {
-  padding: 1.5px 4px;
+  padding: 4px 6px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 10.5px;
-  line-height: 1.1;
+  font-size: 11px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -94,12 +94,26 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #f8f9fa; /* Light subtle gray as seen in screenshot */
-  font-weight: 600;
-  font-size: 8.5px;
+  background-color: #f9fafb;
+  font-weight: 700;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.2px;
   color: var(--color-text-muted);
+  vertical-align: middle;
+}
+
+.header-icon-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.header-icon-wrapper svg {
+  color: var(--color-secondary);
+  opacity: 0.8;
 }
 
 .data-table th::after {
