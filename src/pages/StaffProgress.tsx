@@ -174,7 +174,7 @@ const StaffProgress = () => {
                 <th className="center-text">No</th>
                 <th className="center-text">Kode</th>
                 <th>Cabang</th>
-                <th>FSA/MSA</th>
+                <th colSpan={2}>Nama Staf</th>
                 <th className="center-text">RELEASE<br/>VOUCHER</th>
                 <th className="center-text">UNAPPROVE<br/>PENGAJUAN</th>
                 <th className="center-text">RECALCULATE<br/>DELINQUENCY</th>
@@ -191,7 +191,7 @@ const StaffProgress = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={15} className="center-text" style={{ padding: '40px' }}>
+                  <td colSpan={16} className="center-text" style={{ padding: '40px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: 'var(--color-text-muted)' }}>
                       <Loader2 className="animate-spin" size={24} />
                       <span>Memuat data KPI...</span>
@@ -200,7 +200,7 @@ const StaffProgress = () => {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={15} className="center-text" style={{ padding: '40px', color: 'var(--color-text-muted)' }}>
+                  <td colSpan={16} className="center-text" style={{ padding: '40px', color: 'var(--color-text-muted)' }}>
                     Data KPI tidak ditemukan.
                   </td>
                 </tr>
@@ -218,7 +218,17 @@ const StaffProgress = () => {
                       <td className="center-text mono text-muted">{index + 1}</td>
                       <td className="center-text mono">{staff.id}</td>
                       <td className="fw-500">{staff.branch}</td>
-                      <td>{staff.name}</td>
+                      <td style={{ width: '40px', paddingRight: 0 }}>
+                        <div className="table-avatar">
+                          <img 
+                            src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=random&color=fff&bold=true`} 
+                            alt={staff.name} 
+                          />
+                        </div>
+                      </td>
+                      <td className="fw-600">
+                        <span>{staff.name}</span>
+                      </td>
                       <td className="center-text mono">{staff.release_voucher === 0 ? '-' : staff.release_voucher}</td>
                       <td className="center-text mono">{staff.unapprove_pengajuan === 0 ? '-' : staff.unapprove_pengajuan}</td>
                       <td className="center-text mono">{staff.recalculate_delinquency === 0 ? '-' : staff.recalculate_delinquency}</td>

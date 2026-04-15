@@ -164,7 +164,7 @@ const DetailedReport = () => {
                 <th className="center-text">No</th>
                 <th className="center-text">Kode</th>
                 <th>Cabang</th>
-                <th>Nama Staf</th>
+                <th colSpan={2}>Nama Staf</th>
                 <th className="center-text">RELEASE<br/>VOUCHER</th>
                 <th className="center-text">UNAPPROVE<br/>PENGAJUAN</th>
                 <th className="center-text">RECALCULATE<br/>DELINQUENCY</th>
@@ -192,7 +192,15 @@ const DetailedReport = () => {
                     <td className="center-text mono text-muted">{index + 1}</td>
                     <td className="center-text mono">{staff.id}</td>
                     <td className="fw-500">{staff.branch}</td>
-                    <td className="fw-500">{staff.name}</td>
+                    <td style={{ width: '40px', paddingRight: 0 }}>
+                      <div className="table-avatar">
+                        <img 
+                          src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=random&color=fff&bold=true`} 
+                          alt={staff.name} 
+                        />
+                      </div>
+                    </td>
+                    <td className="fw-600">{staff.name}</td>
                     <td className="center-text mono">{staff.rv || '-'}</td>
                     <td className="center-text mono">{staff.up || '-'}</td>
                     <td className="center-text mono">{staff.rd || '-'}</td>

@@ -22,20 +22,33 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      // Fetch dynamic KPI from VIEW for April
       const { data: staff, error } = await supabase
-        .from('staff_progress')
-        .select('*');
+        .from('v_staff_report')
+        .select('*')
+        .eq('periode', 'April');
 
       if (error) throw error;
 
       if (staff) {
-        setData(staff);
+        const processedStaff = staff.map(s => {
+          const totalKPI = (s.p_rv || 0) + (s.p_up || 0) + (s.p_rd || 0) + (s.p_tp || 0) + 
+                           (s.p_sg || 0) + (s.p_ppi || 0) + (s.p_val || 0) + (s.p_tpk || 0);
+          
+          let status = 'critical';
+          if (totalKPI >= 90) status = 'on-track';
+          else if (totalKPI >= 70) status = 'delayed';
+          
+          return { ...s, totalKPI, status };
+        });
+
+        setData(processedStaff);
         
         // Calculate Summary
-        const totalStaff = staff.length;
-        const avgKPI = Math.round(staff.reduce((acc, curr) => acc + (curr.performance || 0), 0) / (totalStaff || 1));
-        const totalTickets = staff.reduce((acc, curr) => acc + (curr.tiket_perbaikan || 0), 0);
-        const needSupport = staff.filter(s => s.status === 'critical' || s.status === 'delayed' || s.status === 'need improve').length;
+        const totalStaff = processedStaff.length;
+        const avgKPI = Math.round(processedStaff.reduce((acc, curr) => acc + (curr.totalKPI || 0), 0) / (totalStaff || 1));
+        const totalTickets = processedStaff.reduce((acc, curr) => acc + (curr.tpk || 0), 0);
+        const needSupport = processedStaff.filter(s => s.status === 'critical' || s.status === 'delayed').length;
 
         setSummary({ avgKPI, totalStaff, totalTickets, needSupport });
       }
@@ -46,7 +59,7 @@ const Dashboard = () => {
     }
   };
 
-  const sortedData = [...data].sort((a, b) => b.performance - a.performance);
+  const sortedData = [...data].sort((a, b) => (b.totalKPI || 0) - (a.totalKPI || 0));
   const top2 = sortedData.slice(0, 2);
   const bottom2 = [...sortedData].reverse().slice(0, 2);
 
@@ -79,13 +92,18 @@ const Dashboard = () => {
           <div className="highlight-list">
             {top2.map(staff => (
               <div key={staff.id} className="highlight-item">
+                <div className="avatar-wrapper highlight-avatar">
+                   <img 
+                     src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=A8E6CF&color=2E7D61&bold=true`} 
+                     alt={staff.name} 
+                   />
+                </div>
                 <div className="item-info">
                   <span className="name">{staff.name}</span>
-                  <span className="branch">{staff.branch}</span>
                 </div>
                 <div className="item-score">
-                  <span className="score">{staff.performance}%</span>
-                  <ProgressBar progress={staff.performance} color="#ffffff" height={6} />
+                  <span className="score">{staff.totalKPI}%</span>
+                  <ProgressBar progress={staff.totalKPI} color="#ffffff" height={6} />
                 </div>
               </div>
             ))}
@@ -104,13 +122,18 @@ const Dashboard = () => {
           <div className="highlight-list">
             {bottom2.map(staff => (
               <div key={staff.id} className="highlight-item">
+                <div className="avatar-wrapper highlight-avatar">
+                   <img 
+                     src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=fee2e2&color=991b1b&bold=true`} 
+                     alt={staff.name} 
+                   />
+                </div>
                 <div className="item-info">
                   <span className="name">{staff.name}</span>
-                  <span className="branch">{staff.branch}</span>
                 </div>
                 <div className="item-score">
-                  <span className="score">{staff.performance}%</span>
-                  <ProgressBar progress={staff.performance} color="rgba(255,255,255,0.6)" height={6} />
+                  <span className="score">{staff.totalKPI}%</span>
+                  <ProgressBar progress={staff.totalKPI} color="rgba(255,255,255,0.6)" height={6} />
                 </div>
               </div>
             ))}
@@ -122,7 +145,7 @@ const Dashboard = () => {
       <div className="metrics-grid">
         <Card className="metric-card">
           <div className="metric-header">
-            <h3>Rata-rata KPI Regional</h3>
+            <h3>Rata-rata Point Regional</h3>
             <div className="metric-icon teal">
               <TrendingUp size={20} />
             </div>
