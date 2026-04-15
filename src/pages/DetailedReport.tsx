@@ -33,6 +33,7 @@ const DetailedReport = () => {
               name: curr.name,
               branch: curr.branch,
               rv: 0, up: 0, rd: 0, tp: 0, sg: 0, ppi: 0, val: 0, tpk: 0,
+              lastValPeriode: '',
               monthlyHistory: {} // To store KPI per month
             };
           }
@@ -42,7 +43,16 @@ const DetailedReport = () => {
           acc[curr.id].tp += curr.transfer_pencairan || 0;
           acc[curr.id].sg += curr.salah_generate || 0;
           acc[curr.id].ppi += curr.ppi_not_entry || 0;
-          acc[curr.id].val += curr.validasi || 0;
+          // Logic for Validasi: Take latest month's value instead of sum
+          const periodRank: Record<string, number> = { 'April': 3, 'Maret': 2, 'Februari': 1 };
+          const currentPeriod = curr.periode || '';
+          const existingPeriod = acc[curr.id].lastValPeriode || '';
+          
+          if (!acc[curr.id].lastValPeriode || periodRank[currentPeriod] >= periodRank[existingPeriod]) {
+            acc[curr.id].val = curr.validasi || 0;
+            acc[curr.id].lastValPeriode = currentPeriod;
+          }
+          
           acc[curr.id].tpk += curr.tiket_perbaikan || 0;
 
           // Calculate KPI for THIS specific month record

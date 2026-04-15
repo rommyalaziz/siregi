@@ -88,6 +88,10 @@ const StaffProgress = () => {
       if (error) throw error;
 
       if (records) {
+        const periodRank: Record<string, number> = { 'April': 3, 'Maret': 2, 'Februari': 1 };
+        const sortedRecords = [...records].sort((a, b) => (periodRank[b.periode] || 0) - (periodRank[a.periode] || 0));
+        const latestVal = sortedRecords[0]?.validasi || 0;
+
         const totals = records.reduce((acc, curr) => ({
           rv: (acc.rv || 0) + (curr.release_voucher || 0),
           up: (acc.up || 0) + (curr.unapprove_pengajuan || 0),
@@ -95,7 +99,7 @@ const StaffProgress = () => {
           tp: (acc.tp || 0) + (curr.transfer_pencairan || 0),
           sg: (acc.sg || 0) + (curr.salah_generate || 0),
           ppi: (acc.ppi || 0) + (curr.ppi_not_entry || 0),
-          val: (acc.val || 0) + (curr.validasi || 0),
+          val: latestVal, // Correct: Use latest value instead of sum
           tpk: (acc.tpk || 0) + (curr.tiket_perbaikan || 0),
         }), {});
 
