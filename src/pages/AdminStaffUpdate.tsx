@@ -189,21 +189,13 @@ const AdminStaffUpdate = () => {
         .eq('periode', selectedPeriode)
         .select();
 
-      if (updateError) {
-        console.error('Initial Update Error:', updateError);
-      }
-
-      // If no data updated, try INSERT
-      if (updateError || !updateData || updateData.length === 0) {
-        console.log('Row not found or update failed, attempting INSERT...');
-        const { error: insertError } = await supabase
+      // Post-save: If an avatar was uploaded, sync it to ALL months for this staff
+      if (avatar_url) {
+        await supabase
           .from('staff_progress')
-          .insert([payload]);
-        
-        if (insertError) {
-          console.error('Insert Error Detail:', insertError);
-          throw insertError;
-        }
+          .update({ avatar_url })
+          .eq('id', selectedStaffId);
+        console.log('Avatar synced globally for staff:', selectedStaffId);
       }
 
       setMessage({ type: 'success', text: `Data ${staffInfo?.name} berhasil diperbarui.` });
