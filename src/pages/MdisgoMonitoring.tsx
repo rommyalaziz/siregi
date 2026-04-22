@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import {
-  Search, Building2, Users, CalendarDays, Plus, Pencil, Trash2,
+  Search, Building2, Users, Plus, Pencil, Trash2,
   X, Loader2, CheckCircle2, GraduationCap, Save, AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
