@@ -8,6 +8,7 @@ import BranchProgress from './pages/BranchProgress';
 import StaffProgress from './pages/StaffProgress';
 import AdminStaffUpdate from './pages/AdminStaffUpdate';
 import DetailedReport from './pages/DetailedReport';
+import MdisgoMonitoring from './pages/MdisgoMonitoring';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/branches" element={<BranchProgress />} />
           <Route path="/staff" element={<StaffProgress />} />
           <Route path="/reports" element={<DetailedReport />} />
+          <Route path="/mdisgo" element={<MdisgoMonitoring />} />
           <Route path="/admin/update" element={<AdminStaffUpdate />} />
         </Route>
 
