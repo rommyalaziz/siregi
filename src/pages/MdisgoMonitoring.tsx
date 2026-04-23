@@ -183,9 +183,9 @@ const MdisgoMonitoring = () => {
     <div className="mdisgo-container">
       {/* Header */}
       <div className="mdisgo-header">
-        <div>
+        <div className="mdisgo-header-titles">
           <h1>MDISGO</h1>
-          <p>Monitoring cabang yang telah mengikuti training MDISGO.</p>
+          <span className="mdisgo-subtitle">Monitoring cabang yang telah mengikuti training MDISGO.</span>
         </div>
         <div className="mdisgo-header-actions">
           <div className="search-box">
@@ -198,7 +198,7 @@ const MdisgoMonitoring = () => {
             />
           </div>
           {isAdmin && (
-            <button className="btn btn-primary" onClick={openAddModal} style={{ padding: '6px 14px', fontSize: '12px' }}>
+            <button className="btn btn-primary mdisgo-btn-compact" onClick={openAddModal}>
               <Plus size={14} />
               <span>Tambah</span>
             </button>
@@ -326,12 +326,14 @@ const MdisgoMonitoring = () => {
                     </td>
                     {isAdmin && (
                       <td style={{ textAlign: 'center' }}>
-                        <button className="mdisgo-action-btn" title="Edit" onClick={() => openEditModal(branch)}>
-                          <Pencil size={12} />
-                        </button>
-                        <button className="mdisgo-action-btn delete" title="Hapus" onClick={() => handleDelete(branch)}>
-                          <Trash2 size={12} />
-                        </button>
+                        <div className="mdisgo-action-buttons">
+                          <button className="mdisgo-action-btn" title="Edit" onClick={() => openEditModal(branch)}>
+                            <Pencil size={12} />
+                          </button>
+                          <button className="mdisgo-action-btn delete" title="Hapus" onClick={() => handleDelete(branch)}>
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
