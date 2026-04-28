@@ -14,7 +14,7 @@ const Login = () => {
 
   useEffect(() => {
     // Check if already logged in
-    const session = localStorage.getItem('msa_session');
+    const session = sessionStorage.getItem('msa_session');
     if (session) {
       navigate('/dashboard');
     }
@@ -45,7 +45,7 @@ const Login = () => {
       }
 
       // Login success
-      localStorage.setItem('msa_session', JSON.stringify({
+      sessionStorage.setItem('msa_session', JSON.stringify({
         id: user.id,
         username: user.username,
         fullName: user.full_name,

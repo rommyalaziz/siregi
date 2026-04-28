@@ -8,7 +8,7 @@ const MainLayout = () => {
   const [user, setUser] = React.useState<any>(null);
 
   React.useEffect(() => {
-    const session = localStorage.getItem('msa_session');
+    const session = sessionStorage.getItem('msa_session');
     if (session) {
       setUser(JSON.parse(session));
     }

@@ -7,15 +7,15 @@ const Sidebar = () => {
   const navigate = useNavigate();
   
   // Get user session to check role
-  const sessionData = localStorage.getItem('msa_session');
+  const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
   // Make admin check more robust (case-insensitive)
   const isAdmin = user?.role?.toLowerCase().includes('admin');
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Clear the session from localStorage
-    localStorage.removeItem('msa_session');
+    // Clear the session from sessionStorage
+    sessionStorage.removeItem('msa_session');
     // Force redirect back to login
     navigate('/login', { replace: true });
   };

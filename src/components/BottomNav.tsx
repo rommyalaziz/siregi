@@ -3,7 +3,7 @@ import { LayoutDashboard, Users, Building2, GraduationCap, FileBarChart, UserPlu
 import './BottomNav.css';
 
 const BottomNav = () => {
-  const sessionData = localStorage.getItem('msa_session');
+  const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
   const isAdmin = user?.role?.toLowerCase().includes('admin');
 

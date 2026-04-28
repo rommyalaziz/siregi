@@ -37,7 +37,7 @@ const MdisgoMonitoring = () => {
   const [saving, setSaving] = useState(false);
 
   // Check admin role
-  const sessionData = localStorage.getItem('msa_session');
+  const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
   const isAdmin = user?.role?.toLowerCase().includes('admin');
 
