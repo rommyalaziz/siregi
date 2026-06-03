@@ -384,15 +384,16 @@ const DetailedReport = () => {
                         <div style={{ 
                           fontSize: '7.5px', 
                           color: 'var(--color-text-muted)', 
-                          marginTop: '0px', 
+                          marginTop: '2px', 
                           fontStyle: 'italic',
                           lineHeight: '1',
-                          maxWidth: '120px',
+                          maxWidth: '70px',
                           marginLeft: 'auto',
                           marginRight: 'auto',
                           fontWeight: 'normal',
-                          whiteSpace: 'normal',
-                          wordWrap: 'break-word',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                           letterSpacing: '-0.2px'
                         }} title={staff.keteranganHistory.join('; ')}>
                           {staff.keteranganHistory.join('; ')}
