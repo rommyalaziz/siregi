@@ -142,6 +142,7 @@ const AdminStaffUpdate = () => {
             transfer_pencairan: data.transfer_pencairan || 0,
             salah_generate: data.salah_generate || 0,
             ppi_not_entry: data.ppi_not_entry || 0,
+            validasi: data.validasi || 0,
             tiket_perbaikan: data.tiket_perbaikan || 0,
             lain_lain: data.lain_lain || 0,
             lain_lain_keterangan: data.lain_lain_keterangan || ''
