@@ -100,26 +100,39 @@ const KpiParameterModal: React.FC<KpiParameterModalProps> = ({ isOpen, onClose }
                 </tr>
               </thead>
               <tbody>
-                {categories.map((cat, idx) => (
-                  <tr key={idx}>
-                    <td className="sticky-col fw-600">{cat.name}</td>
-                    <td className="center-text fw-700 text-primary">{cat.max}</td>
-                    {cat.points.map((p, pIdx) => (
-                      <td 
-                        key={pIdx} 
-                        className="center-text point-cell"
-                        style={{ 
-                          backgroundColor: getCellColor(p, cat.max, pIdx),
-                          color: getTextColor(p, cat.max, pIdx),
-                          borderBottom: `1px solid ${getHeaderColor(pIdx)}30`,
-                          fontWeight: p === cat.max ? 800 : 500
-                        }}
-                      >
-                        {p}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {categories.map((cat, idx) => {
+                  if (cat.name === 'Lain-lain') {
+                    return (
+                      <tr key={idx}>
+                        <td className="sticky-col fw-600">{cat.name}</td>
+                        <td className="center-text fw-700 text-primary">{cat.max}</td>
+                        <td colSpan={10} className="center-text text-muted" style={{ fontSize: '11px', fontStyle: 'italic', padding: '8px', color: 'var(--color-text-muted)' }}>
+                          Penyesuaian Poin Langsung (contoh: +5 untuk menambah poin, -5 untuk mengurangi poin)
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={idx}>
+                      <td className="sticky-col fw-600">{cat.name}</td>
+                      <td className="center-text fw-700 text-primary">{cat.max}</td>
+                      {cat.points.map((p, pIdx) => (
+                        <td 
+                          key={pIdx} 
+                          className="center-text point-cell"
+                          style={{ 
+                            backgroundColor: getCellColor(p, cat.max, pIdx),
+                            color: getTextColor(p, cat.max, pIdx),
+                            borderBottom: `1px solid ${getHeaderColor(pIdx)}30`,
+                            fontWeight: p === cat.max ? 800 : 500
+                          }}
+                        >
+                          {p}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
                 <tr className="total-row">
                   <td className="sticky-col">TOTAL POIN</td>
                   <td className="center-text">100</td>

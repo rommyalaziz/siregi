@@ -1,13 +1,13 @@
 -- =============================================
--- MIGRASI: Tambah kolom lain_lain & update view
+-- MIGRASI: Tambah kolom lain_lain_keterangan & update view
 -- Jalankan di Supabase SQL Editor
 -- =============================================
 
 -- STEP 1: Tambah kolom baru ke tabel staff_progress
 ALTER TABLE staff_progress
-ADD COLUMN IF NOT EXISTS lain_lain INTEGER DEFAULT 0;
+ADD COLUMN IF NOT EXISTS lain_lain_keterangan TEXT;
 
--- STEP 2: Recreate view dengan parameter baru + kolom lain_lain
+-- STEP 2: Recreate view dengan parameter baru
 DROP VIEW IF EXISTS v_staff_report;
 
 CREATE VIEW v_staff_report AS
@@ -38,7 +38,7 @@ SELECT
     ELSE 0 
   END as p_up,
   
-  -- 3. Recalculate Delinquency (Max 10) — DIPERBARUI dari 15 ke 10
+  -- 3. Recalculate Delinquency (Max 10)
   CASE 
     WHEN recalculate_delinquency = 0 THEN 10 
     WHEN recalculate_delinquency = 1 THEN 8
@@ -59,7 +59,7 @@ SELECT
     ELSE 0 
   END as p_tp,
   
-  -- 5. Salah Generate (Max 10) — DIPERBARUI dari 15 ke 10
+  -- 5. Salah Generate (Max 10)
   CASE 
     WHEN salah_generate = 0 THEN 10 
     WHEN salah_generate = 1 THEN 11

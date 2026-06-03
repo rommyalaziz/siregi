@@ -81,6 +81,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <ClipboardCheck size={16} />
               <span>Kunjungan</span>
             </NavLink>
+            <NavLink to="/admin/data-user" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Users size={16} />
+              <span>Data User</span>
+            </NavLink>
           </>
         )}
 

@@ -52,7 +52,8 @@ const DetailedReport = () => {
               avatar_url: null, // Initialize to null, will be resolved below
               rv: 0, up: 0, rd: 0, tp: 0, sg: 0, ppi: 0, val: 0, tpk: 0, ll: 0,
               lastValPeriode: '',
-              monthlyHistory: {} // To store KPI per month
+              monthlyHistory: {}, // To store KPI per month
+              keteranganHistory: [] // To store history of lain_lain_keterangan
             };
           }
 
@@ -84,6 +85,10 @@ const DetailedReport = () => {
           acc[curr.id].tpk += curr.tiket_perbaikan || 0;
           acc[curr.id].ll  += curr.lain_lain || 0;
 
+          if (curr.lain_lain_keterangan && curr.lain_lain_keterangan.trim() !== '') {
+            acc[curr.id].keteranganHistory.push(`${curr.periode}: ${curr.lain_lain_keterangan}`);
+          }
+
           // Calculate KPI for THIS specific month record
           const calcPts = (val: number, params: any) => {
             for (const p of params) {
@@ -100,7 +105,7 @@ const DetailedReport = () => {
           const p_ppi = calcPts(curr.ppi_not_entry || 0,             [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_val = calcPts(curr.validasi || 0,                  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_tpk = calcPts(curr.tiket_perbaikan || 0,           [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ll  = calcPts(curr.lain_lain || 0,                 [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:4},{min:4,max:5,pts:2},{min:6,max:7,pts:1},{min:8,max:999,pts:0}]);
+          const p_ll  = 10 + (curr.lain_lain || 0);
           
           const monthKpi = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
           acc[curr.id].monthlyHistory[curr.periode] = monthKpi;
@@ -125,7 +130,7 @@ const DetailedReport = () => {
           const p_ppi = calcPts(s.ppi, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_val = calcPts(s.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_tpk = calcPts(s.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ll  = calcPts(s.ll,  [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:4},{min:4,max:5,pts:2},{min:6,max:7,pts:1},{min:8,max:999,pts:0}]);
+          const p_ll  = 10 + (s.ll || 0);
 
           const totalKPI = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
           
@@ -148,7 +153,7 @@ const DetailedReport = () => {
           if (totalKPI >= 90) color = '#22c55e';
           else if (totalKPI >= 70) color = '#f59e0b';
 
-          return { ...s, totalKPI, kpiColor: color, trendData, trendStatus };
+          return { ...s, totalKPI, kpiColor: color, trendData, trendStatus, keteranganHistory: s.keteranganHistory };
         });
 
         setData(result.sort((a, b) => b.totalKPI - a.totalKPI));
@@ -367,7 +372,32 @@ const DetailedReport = () => {
                     <td className="center-text mono" data-label="PPI Not Entry">{staff.ppi || '-'}</td>
                     <td className="center-text mono" data-label="Validasi">{staff.val || '-'}</td>
                     <td className="center-text mono" data-label="Tiket Perbaikan">{staff.tpk || '-'}</td>
-                    <td className="center-text mono" data-label="Lain-lain">{staff.ll || '-'}</td>
+                    <td className="center-text mono" data-label="Lain-lain">
+                      <div>
+                        {staff.ll === 0 
+                          ? '-' 
+                          : staff.ll > 0 
+                            ? `+${staff.ll}` 
+                            : staff.ll}
+                      </div>
+                      {staff.keteranganHistory && staff.keteranganHistory.length > 0 && (
+                        <div style={{ 
+                          fontSize: '8px', 
+                          color: 'var(--color-text-muted)', 
+                          marginTop: '2px', 
+                          fontStyle: 'italic',
+                          lineHeight: '1.1',
+                          maxWidth: '120px',
+                          marginLeft: 'auto',
+                          marginRight: 'auto',
+                          fontWeight: 'normal',
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word'
+                        }} title={staff.keteranganHistory.join('; ')}>
+                          {staff.keteranganHistory.join('; ')}
+                        </div>
+                      )}
+                    </td>
                     <td className="center-text" data-label="Progres Tren" style={{ padding: '4px 12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
                          <div style={{ width: '60px', height: '28px' }}>

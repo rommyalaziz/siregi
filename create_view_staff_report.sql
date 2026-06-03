@@ -100,14 +100,7 @@ SELECT
     ELSE 0 
   END as p_tpk,
 
-  -- 9. Lain-lain (Max 10) — BARU
-  CASE 
-    WHEN lain_lain = 0 THEN 10 
-    WHEN lain_lain = 1 THEN 7
-    WHEN lain_lain BETWEEN 2 AND 3 THEN 4 
-    WHEN lain_lain BETWEEN 4 AND 5 THEN 2
-    WHEN lain_lain BETWEEN 6 AND 7 THEN 1 
-    ELSE 0 
-  END as p_ll
+  -- 9. Lain-lain (Base 10, adjustment)
+  (10 + lain_lain) as p_ll
 
 FROM staff_progress;

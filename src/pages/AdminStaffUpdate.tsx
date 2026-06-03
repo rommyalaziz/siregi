@@ -26,7 +26,8 @@ const AdminStaffUpdate = () => {
     ppi_not_entry: 0,
     validasi: 0,
     tiket_perbaikan: 0,
-    lain_lain: 0
+    lain_lain: 0,
+    lain_lain_keterangan: ''
   });
 
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -43,7 +44,7 @@ const AdminStaffUpdate = () => {
     { id: 'ppi_not_entry', name: 'PPI Not Entry' },
     { id: 'validasi', name: 'Validasi' },
     { id: 'tiket_perbaikan', name: 'Tiket Perbaikan' },
-    { id: 'lain_lain', name: 'Lain-lain' },
+    { id: 'lain_lain', name: 'Lain-lain (+/- poin)' },
   ];
 
   // 1. Fetch staff names for the dropdown
@@ -141,16 +142,17 @@ const AdminStaffUpdate = () => {
             transfer_pencairan: data.transfer_pencairan || 0,
             salah_generate: data.salah_generate || 0,
             ppi_not_entry: data.ppi_not_entry || 0,
-            validasi: data.validasi || 0,
             tiket_perbaikan: data.tiket_perbaikan || 0,
-            lain_lain: data.lain_lain || 0
+            lain_lain: data.lain_lain || 0,
+            lain_lain_keterangan: data.lain_lain_keterangan || ''
           });
           setAvatarPreview(data.avatar_url || persistentAvatar);
         } else {
           setFormData({
             release_voucher: 0, unapprove_pengajuan: 0, recalculate_delinquency: 0,
             transfer_pencairan: 0, salah_generate: 0, ppi_not_entry: 0,
-            validasi: 0, tiket_perbaikan: 0, lain_lain: 0
+            validasi: 0, tiket_perbaikan: 0, lain_lain: 0,
+            lain_lain_keterangan: ''
           });
           setAvatarPreview(persistentAvatar);
         }
@@ -282,7 +284,8 @@ const AdminStaffUpdate = () => {
       setFormData({
         release_voucher: 0, unapprove_pengajuan: 0, recalculate_delinquency: 0,
         transfer_pencairan: 0, salah_generate: 0, ppi_not_entry: 0,
-        validasi: 0, tiket_perbaikan: 0, lain_lain: 0
+        validasi: 0, tiket_perbaikan: 0, lain_lain: 0,
+        lain_lain_keterangan: ''
       });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Gagal meriset data' });
@@ -479,44 +482,73 @@ const AdminStaffUpdate = () => {
               gap: '12px', 
               marginBottom: '24px' 
             }}>
-              {categories.map(c => (
-                <div 
-                  key={c.id} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
-                    background: 'var(--color-bg-alt)', 
-                    padding: '8px 12px', 
-                    borderRadius: '6px', 
-                    border: '1px solid var(--color-border)',
-                    transition: 'border-color 0.2s',
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                  onBlur={(e) => e.currentTarget.style.borderColor = 'var(--color-border)'}
-                >
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text)', textTransform: 'uppercase', letterSpacing: '0.025em', maxWidth: '140px', lineHeight: '1.3' }}>
-                    {c.name}
-                  </label>
-                  <input 
-                    type="number" 
-                    className="btn btn-outline" 
+              {categories.map(c => {
+                const isLainLain = c.id === 'lain_lain';
+                return (
+                  <div 
+                    key={c.id} 
                     style={{ 
-                      width: '64px', 
-                      height: '32px', 
-                      textAlign: 'center', 
-                      fontSize: '15px', 
-                      fontWeight: '700', 
-                      padding: '0',
-                      background: 'white',
-                      color: 'var(--color-text)'
+                      display: 'flex', 
+                      flexDirection: isLainLain ? 'column' : 'row',
+                      alignItems: isLainLain ? 'stretch' : 'center', 
+                      justifyContent: 'space-between', 
+                      background: 'var(--color-bg-alt)', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--color-border)',
+                      transition: 'border-color 0.2s',
+                      gap: isLainLain ? '8px' : '0'
                     }}
-                    value={(formData as any)[c.id]}
-                    onChange={(e) => handleInputChange(c.id, e.target.value)}
-                    min="0"
-                  />
-                </div>
-              ))}
+                    onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text)', textTransform: 'uppercase', letterSpacing: '0.025em', maxWidth: '140px', lineHeight: '1.3' }}>
+                        {c.name}
+                      </label>
+                      <input 
+                        type="number" 
+                        className="btn btn-outline" 
+                        style={{ 
+                          width: '64px', 
+                          height: '32px', 
+                          textAlign: 'center', 
+                          fontSize: '15px', 
+                          fontWeight: '700', 
+                          padding: '0',
+                          background: 'white',
+                          color: 'var(--color-text)'
+                        }}
+                        value={(formData as any)[c.id]}
+                        onChange={(e) => handleInputChange(c.id, e.target.value)}
+                        min={isLainLain ? undefined : "0"}
+                      />
+                    </div>
+                    {isLainLain && (
+                      <div style={{ width: '100%', marginTop: '2px' }}>
+                        <input
+                          type="text"
+                          placeholder="Alasan penambahan/pengurangan poin..."
+                          className="btn btn-outline"
+                          style={{
+                            width: '100%',
+                            height: '32px',
+                            fontSize: '12px',
+                            padding: '0 8px',
+                            background: 'white',
+                            color: 'var(--color-text)',
+                            textAlign: 'left',
+                            fontWeight: 'normal',
+                            borderStyle: 'dashed'
+                          }}
+                          value={formData.lain_lain_keterangan}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lain_lain_keterangan: e.target.value }))}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* ACTIONS ROW */}

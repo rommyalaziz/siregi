@@ -185,7 +185,7 @@ const StaffProgress = () => {
         const p_ppi = calcPts(totals.ppi, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
         const p_val = calcPts(totals.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
         const p_tpk = calcPts(totals.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-        const p_ll  = calcPts(totals.ll,  [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:4},{min:4,max:5,pts:2},{min:6,max:7,pts:1},{min:8,max:999,pts:0}]);
+        const p_ll  = 10 + (totals.ll || 0);
 
         const totalPoints = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
         setCumulativeData({ ...totals, totalPoints });
@@ -427,7 +427,32 @@ const StaffProgress = () => {
                       <td className="center-text mono" data-label="PPI Not Entry">{staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry}</td>
                       <td className="center-text mono" data-label="Validasi">{staff.validasi === 0 ? '-' : staff.validasi}</td>
                       <td className="center-text mono" data-label="Tiket Perbaikan">{staff.tiket_perbaikan === 0 ? '-' : staff.tiket_perbaikan}</td>
-                      <td className="center-text mono" data-label="Lain-lain">{staff.lain_lain === 0 ? '-' : staff.lain_lain}</td>
+                      <td className="center-text mono" data-label="Lain-lain">
+                        <div>
+                          {staff.lain_lain === 0 
+                            ? '-' 
+                            : staff.lain_lain > 0 
+                              ? `+${staff.lain_lain}` 
+                              : staff.lain_lain}
+                        </div>
+                        {staff.lain_lain_keterangan && (
+                          <div style={{ 
+                            fontSize: '9px', 
+                            color: 'var(--color-text-muted)', 
+                            marginTop: '2px', 
+                            fontStyle: 'italic',
+                            lineHeight: '1.1',
+                            maxWidth: '120px',
+                            marginLeft: 'auto',
+                            marginRight: 'auto',
+                            fontWeight: 'normal',
+                            whiteSpace: 'normal',
+                            wordWrap: 'break-word'
+                          }} title={staff.lain_lain_keterangan}>
+                            {staff.lain_lain_keterangan}
+                          </div>
+                        )}
+                      </td>
                       <td data-label="Point">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{ flex: 1 }}>
@@ -478,6 +503,22 @@ const StaffProgress = () => {
                 <span className="mono text-muted">{selectedStaff.id}</span>
               </div>
               <p style={{ margin: 0, color: 'var(--color-text-muted)' }}>{selectedStaff.branch}</p>
+
+              {selectedStaff.lain_lain_keterangan && (
+                <div style={{ 
+                  marginTop: '12px',
+                  padding: '10px 14px',
+                  backgroundColor: '#FEF3C7',
+                  borderLeft: '4px solid #F59E0B',
+                  borderRadius: '6px',
+                  color: '#92400E',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  lineHeight: '1.4'
+                }}>
+                  <strong>Catatan Khusus ({selectedStaff.periode}):</strong> {selectedStaff.lain_lain_keterangan}
+                </div>
+              )}
             </div>
             
             <div className="drawer-section">
@@ -534,7 +575,13 @@ const StaffProgress = () => {
                   </div>
                   <div className="cum-item">
                     <span className="label">Lain-lain</span>
-                    <span className="value">{cumulativeData.ll}</span>
+                    <span className="value">
+                      {cumulativeData.ll === 0 
+                        ? '-' 
+                        : cumulativeData.ll > 0 
+                          ? `+${cumulativeData.ll}` 
+                          : cumulativeData.ll}
+                    </span>
                   </div>
                 </div>
                 
