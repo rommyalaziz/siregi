@@ -437,17 +437,18 @@ const StaffProgress = () => {
                         </div>
                         {staff.lain_lain_keterangan && (
                           <div style={{ 
-                            fontSize: '9px', 
+                            fontSize: '7.5px', 
                             color: 'var(--color-text-muted)', 
-                            marginTop: '2px', 
+                            marginTop: '0px', 
                             fontStyle: 'italic',
-                            lineHeight: '1.1',
+                            lineHeight: '1',
                             maxWidth: '120px',
                             marginLeft: 'auto',
                             marginRight: 'auto',
                             fontWeight: 'normal',
                             whiteSpace: 'normal',
-                            wordWrap: 'break-word'
+                            wordWrap: 'break-word',
+                            letterSpacing: '-0.2px'
                           }} title={staff.lain_lain_keterangan}>
                             {staff.lain_lain_keterangan}
                           </div>
