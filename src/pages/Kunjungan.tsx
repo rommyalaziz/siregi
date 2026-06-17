@@ -243,9 +243,10 @@ const Kunjungan = () => {
 
   const handlePrintItem = (item: KunjunganCabang) => {
     setEditingItem(item);
+    setShowDetailModal(true);
     setTimeout(() => {
       window.print();
-    }, 100);
+    }, 300);
   };
 
   const calculateScore = (item: KunjunganCabang | Omit<KunjunganCabang, 'id'>) => {
