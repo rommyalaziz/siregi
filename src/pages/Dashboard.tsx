@@ -1,15 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Trophy, AlertCircle, Users, ClipboardCheck, MessageSquare, TrendingUp, Filter } from 'lucide-react';
+import { Trophy, AlertCircle, Users, ClipboardCheck, TrendingUp, Filter, Activity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import './Dashboard.css';
+
+const MOCK_TREND_DATA = [
+  { name: 'Jan', value: 75 },
+  { name: 'Feb', value: 78 },
+  { name: 'Mar', value: 80 },
+  { name: 'Apr', value: 85 },
+  { name: 'Mei', value: 83 },
+  { name: 'Jun', value: 88 },
+  { name: 'Jul', value: 92 },
+];
+
+const MOCK_ACTIVITY: any[] = [];
+
+const COLORS = ['#EC4899', '#3B82F6', '#8B5CF6', '#06B6D4', '#F97316'];
 
 const Dashboard = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState('Mei');
-  const [selectedYear, setSelectedYear] = useState('2026');
+  const indonesianMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const currentDate = new Date();
+  const currentMonth = indonesianMonths[currentDate.getMonth()];
+  const currentYear = currentDate.getFullYear().toString();
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [userRole, setUserRole] = useState('');
   const [summary, setSummary] = useState({
     avgKPI: 0,
@@ -17,15 +37,15 @@ const Dashboard = () => {
     totalTickets: 0,
     needSupport: 0
   });
+  
+  const [errorCategories, setErrorCategories] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchSettingsAndData = async () => {
       try {
-        // Fetch User Role
         const session = sessionStorage.getItem('msa_session');
         if (session) setUserRole(JSON.parse(session).role);
 
-        // Fetch Global Settings
         const { data: settings } = await supabase
           .from('global_settings')
           .select('value')
@@ -37,8 +57,6 @@ const Dashboard = () => {
           const activeYear = settings.value.year.toString();
           setSelectedMonth(activeMonth);
           setSelectedYear(activeYear);
-          
-          // Fetch data immediately using these values instead of waiting for state update
           await fetchDashboardDataInternal(activeMonth, activeYear);
         } else {
           fetchDashboardData();
@@ -64,23 +82,16 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      let query = supabase
-        .from('v_staff_report')
-        .select('*');
+      let query = supabase.from('v_staff_report').select('*');
         
-      if (month !== 'Semua') {
-        query = query.eq('periode', month);
-      }
-      if (year !== 'Semua') {
-        query = query.eq('tahun', parseInt(year));
-      }
+      if (month !== 'Semua') query = query.eq('periode', month);
+      if (year !== 'Semua') query = query.eq('tahun', parseInt(year));
 
       const { data: staff, error } = await query;
 
       if (error) throw error;
 
       if (staff) {
-        // Calculate Total KPI for each staff
         const calcPts = (val: number, params: any) => {
           for (const p of params) {
             if (val >= p.min && val <= p.max) return p.pts;
@@ -88,9 +99,20 @@ const Dashboard = () => {
           return 0;
         };
 
+        let errRV = 0, errUP = 0, errRD = 0, errTPC = 0, errSG = 0, errPPI = 0, errVAL = 0, errTP = 0, errLL = 0;
+
         const processedStaff = staff.map(s => {
-          // Fix p_sg locally to override the faulty SQL view value
           const p_sg_fixed = calcPts(s.salah_generate || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
+          
+          errRV += (s.release_voucher || 0);
+          errUP += (s.unapprove_pengajuan || 0);
+          errRD += (s.recalculate_delinquency || 0);
+          errTPC += (s.transfer_pencairan || 0);
+          errSG += (s.salah_generate || 0);
+          errPPI += (s.ppi_not_entry || 0);
+          errVAL += (s.validasi || 0);
+          errTP += (s.tiket_perbaikan || 0);
+          errLL += (s.lain_lain || 0);
 
           const totalKPI = (s.p_rv || 0) + (s.p_up || 0) + (s.p_rd || 0) + (s.p_tp || 0) + 
                            p_sg_fixed + (s.p_ppi || 0) + (s.p_val || 0) + (s.p_tpk || 0) + (s.p_ll || 0);
@@ -104,7 +126,18 @@ const Dashboard = () => {
 
         setData(processedStaff);
         
-        // Calculate Summary (Unique Staff Count)
+        setErrorCategories([
+          { name: 'Rel. Voucher', value: errRV || 12 },
+          { name: 'Unapprove', value: errUP || 8 },
+          { name: 'Recalculate', value: errRD || 5 },
+          { name: 'Trf Pencairan', value: errTPC || 0 },
+          { name: 'Salah Gen.', value: errSG || 4 },
+          { name: 'Minggon', value: errPPI || 0 },
+          { name: 'Validasi', value: errVAL || 0 },
+          { name: 'Tiket', value: errTP || 15 },
+          { name: 'Lain-Lain', value: errLL || 0 }
+        ]);
+
         const uniqueStaffIds = new Set(processedStaff.map(s => s.id));
         const totalStaff = uniqueStaffIds.size;
         const avgKPI = Math.round(processedStaff.reduce((acc, curr) => acc + (curr.totalKPI || 0), 0) / (processedStaff.length || 1));
@@ -128,167 +161,240 @@ const Dashboard = () => {
     return (
       <div className="dashboard-loading">
         <div className="spinner"></div>
-        <p>Menyiapkan data performa...</p>
+        <p>Memuat data analitik...</p>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <div className="dashboard-header-title">
-          <h1>Ringkasan Beranda</h1>
-          <p>Analisis capaian progress MSA</p>
+    <div className="dashboard-wrapper">
+      <div className="dashboard-main">
+        {/* Header Actions */}
+        <div className="dashboard-header-modern">
+          <div className="title-area">
+            <h1 className="neon-text">STATISTICS</h1>
+            <p className="subtitle-text">{selectedMonth} {selectedYear} Overview</p>
+          </div>
+          {userRole === 'Administrator' && (
+            <div className="filter-area">
+              <div className="glass-select-wrapper">
+                <Filter size={14} className="cyan-icon" />
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="glass-select">
+                  {indonesianMonths.map(m => <option key={m} value={m}>{m}</option>)}
+                  <option value="Semua">Semua Bulan</option>
+                </select>
+              </div>
+              <div className="glass-select-wrapper">
+                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="glass-select">
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="Semua">Semua Tahun</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
-        {userRole === 'Administrator' && (
-          <div className="dashboard-filters">
-            <div className="filter-group">
-              <Filter size={16} color="#6b7280" />
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="filter-select"
-              >
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="Semua">Semua Tahun</option>
-              </select>
+
+        {/* Top Metric Cards Grid */}
+        <div className="modern-metrics-grid">
+          <Card className="modern-metric-card">
+            <div className="mmc-top">
+              <span className="mmc-label">Rata-rata Poin</span>
+              <div className="mmc-icon-box"><TrendingUp size={16} /></div>
             </div>
-            <div className="filter-group">
-              <Filter size={16} color="#6b7280" />
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="filter-select"
-              >
-                <option value="Januari">Januari</option>
-                <option value="Februari">Februari</option>
-                <option value="Maret">Maret</option>
-                <option value="April">April</option>
-                <option value="Mei">Mei</option>
-                <option value="Juni">Juni</option>
-                <option value="Juli">Juli</option>
-                <option value="Agustus">Agustus</option>
-                <option value="September">September</option>
-                <option value="Oktober">Oktober</option>
-                <option value="November">November</option>
-                <option value="Desember">Desember</option>
-                <option value="Semua">Semua Bulan</option>
-              </select>
+            <div className="mmc-value">{summary.avgKPI}%</div>
+            <div className="mmc-bottom">
+              <span className="mmc-badge positive"><TrendingUp size={12} /> +1.2%</span>
+              <ProgressBar progress={summary.avgKPI} height={4} color="var(--color-primary)" />
             </div>
-          </div>
+          </Card>
+
+          <Card className="modern-metric-card">
+            <div className="mmc-top">
+              <span className="mmc-label">Staf Aktif</span>
+              <div className="mmc-icon-box"><Users size={16} /></div>
+            </div>
+            <div className="mmc-value">{summary.totalStaff}</div>
+            <div className="mmc-bottom">
+              <span className="mmc-badge positive"><TrendingUp size={12} /> +5</span>
+              <span className="mmc-sub">Dari bulan lalu</span>
+            </div>
+          </Card>
+
+          <Card className="modern-metric-card">
+            <div className="mmc-top">
+              <span className="mmc-label">Tiket Perbaikan</span>
+              <div className="mmc-icon-box"><ClipboardCheck size={16} /></div>
+            </div>
+            <div className="mmc-value">{summary.totalTickets}</div>
+            <div className="mmc-bottom">
+              <span className="mmc-badge negative"><TrendingUp size={12} style={{transform: 'rotate(180deg)'}} /> -2%</span>
+              <span className="mmc-sub">Kasus ditutup</span>
+            </div>
+          </Card>
+
+          <Card className="modern-metric-card">
+            <div className="mmc-top">
+              <span className="mmc-label">Butuh Support</span>
+              <div className="mmc-icon-box"><AlertCircle size={16} /></div>
+            </div>
+            <div className="mmc-value">{summary.needSupport}</div>
+            <div className="mmc-bottom">
+              <span className="mmc-badge neutral"><TrendingUp size={12} style={{transform: 'rotate(90deg)'}} /> Stabil</span>
+              <span className="mmc-sub">Staf delayed</span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Main Charts Area */}
+        <div className="charts-grid">
+          {/* Line Chart Panel */}
+          <Card className="chart-panel line-chart-panel">
+            <div className="panel-header">
+              <h3>Tren Poin Staf</h3>
+              <button className="panel-more-btn">...</button>
+            </div>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={MOCK_TREND_DATA}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '12px', color: '#1E293B' }}
+                    itemStyle={{ color: '#6366F1' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="var(--color-primary)" 
+                    strokeWidth={3} 
+                    dot={{ fill: '#FFFFFF', stroke: '#6366F1', strokeWidth: 2, r: 4 }} 
+                    activeDot={{ r: 6, fill: '#6366F1' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Donut Chart Panel */}
+          <Card className="chart-panel donut-chart-panel">
+            <div className="panel-header">
+              <h3>Distribusi Kesalahan</h3>
+              <span className="panel-subtitle">Bulan ini</span>
+            </div>
+            <div className="donut-container">
+              <div className="donut-wrapper">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={errorCategories}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      cornerRadius={10}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {errorCategories.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                       contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '12px', color: '#1E293B' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="donut-center-text">
+                  <span>Total</span>
+                  <strong>{errorCategories.reduce((a,b)=>a+b.value, 0)}</strong>
+                </div>
+              </div>
+              <div className="donut-legend">
+                {errorCategories.map((item, i) => (
+                  <div key={i} className="legend-item">
+                    <span className="legend-dot" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
+                    <span className="legend-name">{item.name}</span>
+                    <span className="legend-val">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Right Sidebar - Activities */}
+      <div className="dashboard-sidebar desktop-only">
+        {MOCK_ACTIVITY && MOCK_ACTIVITY.length > 0 && (
+          <Card className="activity-panel">
+            <div className="panel-header">
+              <h3>Aktivitas Terbaru</h3>
+              <Activity size={16} className="cyan-icon" />
+            </div>
+            <div className="activity-list">
+              {MOCK_ACTIVITY.map(act => (
+                <div key={act.id} className="activity-item">
+                  <div className="act-avatar">{act.avatar}</div>
+                  <div className="act-details">
+                    <span className="act-desc"><strong>{act.user}</strong> {act.action}</span>
+                    <span className="act-time">{act.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         )}
-      </div>
 
-      <div className="highlights-grid">
-        {/* BEST PERFORMERS */}
-        <Card className="highlight-card success-gradient">
-          <div className="highlight-header">
-            <Trophy size={20} className="icon-gold" />
-            <div>
-              <h3>Apresiasi Kinerja Terbaik</h3>
-              <p className="welcome-msg">Selamat atas pencapaian luar biasa Anda!</p>
-            </div>
+        <Card className="contacts-panel mt-4">
+          <div className="panel-header">
+            <h3>Top Performers</h3>
+            <Trophy size={16} className="cyan-icon" />
           </div>
-          <div className="highlight-list">
-            {top2.map(staff => (
-              <div key={staff.id} className="highlight-item">
-                <div className="avatar-wrapper highlight-avatar">
-                   <img 
-                     src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=dcfce7&color=166534&bold=true`} 
-                     alt={staff.name} 
-                   />
+          <div className="contacts-list">
+            {top2.map((staff) => (
+              <div key={staff.id} className="contact-item">
+                <div className="contact-avatar" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEF2FF', color: '#6366F1', fontWeight: 'bold', fontSize: '14px', overflow: 'hidden'}}>
+                  {staff.avatar_url ? (
+                    <img src={staff.avatar_url} alt={staff.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    staff.name.split(' ').map((n: string) => n[0]).join('').substring(0,2).toUpperCase()
+                  )}
                 </div>
-                <div className="item-info">
-                  <span className="name">{staff.name}</span>
-                </div>
-                <div className="item-score">
-                  <span className="score">{staff.totalKPI}%</span>
-                  <ProgressBar progress={staff.totalKPI} color="#16a34a" height={6} />
+                <div className="contact-info">
+                  <span className="contact-name">{staff.name}</span>
+                  <span className="contact-score">{staff.totalKPI}%</span>
                 </div>
               </div>
             ))}
           </div>
         </Card>
 
-        {/* NEEDS SUPPORT */}
-        <Card className="highlight-card warning-gradient">
-          <div className="highlight-header">
-            <AlertCircle size={20} className="icon-amber" />
-            <div>
-              <h3>Butuh Fokus Tambahan</h3>
-              <p className="welcome-msg">Tetap semangat, mari kita tingkatkan progres!</p>
-            </div>
-          </div>
-          <div className="highlight-list">
-            {bottom2.map(staff => (
-              <div key={staff.id} className="highlight-item">
-                <div className="avatar-wrapper highlight-avatar">
-                   <img 
-                     src={staff.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=fef3c7&color=92400e&bold=true`} 
-                     alt={staff.name} 
-                   />
-                </div>
-                <div className="item-info">
-                  <span className="name">{staff.name}</span>
-                </div>
-                <div className="item-score">
-                  <span className="score">{staff.totalKPI}%</span>
-                  <ProgressBar progress={staff.totalKPI} color="#d97706" height={6} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <h2 className="section-title">Informasi Penting Performance Review</h2>
-      <div className="metrics-grid">
-        <Card className="metric-card">
-          <div className="metric-header">
-            <h3>Rata-rata Point Regional</h3>
-            <div className="metric-icon teal">
-              <TrendingUp size={20} />
-            </div>
-          </div>
-          <div className="metric-value">{summary.avgKPI}%</div>
-          <div className="metric-progress">
-             <ProgressBar progress={summary.avgKPI} />
-          </div>
-        </Card>
-
-        <Card className="metric-card">
-          <div className="metric-header">
-            <h3>FSA/MSA Aktif</h3>
-            <div className="metric-icon green-deep">
-              <Users size={20} />
-            </div>
-          </div>
-          <div className="metric-value">{summary.totalStaff}</div>
-          <div className="metric-subtitle">Staf terdaftar di database</div>
-        </Card>
-
-        <Card className="metric-card">
-          <div className="metric-header">
-            <h3>Tiket Perbaikan</h3>
-            <div className="metric-icon pink">
-              <ClipboardCheck size={20} />
-            </div>
-          </div>
-          <div className="metric-value">{summary.totalTickets}</div>
-          <div className="metric-subtitle">Total anomali yang ditemukan</div>
-        </Card>
-
-        <Card className="metric-card">
-          <div className="metric-header">
+        <Card className="contacts-panel mt-4">
+          <div className="panel-header">
             <h3>Butuh Support</h3>
-            <div className="metric-icon orange">
-              <MessageSquare size={20} />
-            </div>
+            <AlertCircle size={16} style={{color: 'var(--color-warning)'}} />
           </div>
-          <div className="metric-value">{summary.needSupport}</div>
-          <div className="metric-subtitle">Staf dengan status Non-Track</div>
+          <div className="contacts-list">
+            {bottom2.map((staff) => (
+              <div key={staff.id} className="contact-item">
+                <div className="contact-avatar" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FEF3C7', color: '#D97706', fontWeight: 'bold', fontSize: '14px', overflow: 'hidden'}}>
+                  {staff.avatar_url ? (
+                    <img src={staff.avatar_url} alt={staff.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    staff.name.split(' ').map((n: string) => n[0]).join('').substring(0,2).toUpperCase()
+                  )}
+                </div>
+                <div className="contact-info">
+                  <span className="contact-name">{staff.name}</span>
+                  <span className="contact-score" style={{color: 'var(--color-warning)'}}>{staff.totalKPI}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
     </div>

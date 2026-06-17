@@ -16,11 +16,6 @@ const MainLayout = () => {
     }
   }, []);
 
-  const getInitials = (name: string) => {
-    if (!name) return 'A';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
   return (
     <div className="main-layout">
       <Sidebar 
@@ -36,13 +31,21 @@ const MainLayout = () => {
             >
               <Menu size={24} />
             </button>
-            <div className="header-breadcrumbs">
-              <span className="breadcrumb-role">{user?.role || 'User'}</span>
-            </div>
           </div>
-          <div className="user-profile">
-            <div className="avatar">{getInitials(user?.fullName)}</div>
-            <span className="user-name">{user?.fullName || 'Admin'}</span>
+          <div className="header-right">
+            <div className="search-bar desktop-only">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" placeholder="Search..." />
+            </div>
+            <div className="user-profile">
+              <div className="avatar">
+                <img src={`https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=EEF2FF&color=6366F1`} alt="User avatar" style={{width: '100%', height: '100%', borderRadius: '50%'}} />
+              </div>
+              <div className="user-info desktop-only">
+                <span className="user-name">{user?.fullName || 'Admin User'}</span>
+                <span className="user-role">{user?.role || 'User'}</span>
+              </div>
+            </div>
           </div>
         </header>
         <main className="content-area">

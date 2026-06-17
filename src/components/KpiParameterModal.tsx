@@ -33,7 +33,7 @@ const KpiParameterModal: React.FC<KpiParameterModalProps> = ({ isOpen, onClose }
       '#fbbf24', // 6-7
       '#fb923c', // 8-10
       '#f87171', // 11-13
-      '#ef4444', // 14-16
+      'var(--color-danger)', // 14-16
       '#dc2626', // 17-20
       '#991b1b'  // >20
     ];

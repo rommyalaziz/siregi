@@ -67,7 +67,18 @@ const DetailedReport = () => {
           acc[curr.id].rd += curr.recalculate_delinquency || 0;
           acc[curr.id].tp += curr.transfer_pencairan || 0;
           acc[curr.id].sg += curr.salah_generate || 0;
-          acc[curr.id].ppi += curr.ppi_not_entry || 0;
+          acc[curr.id].sg += curr.salah_generate || 0;
+          
+          const isMinggonMonth = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          if (isMinggonMonth) {
+            acc[curr.id].minggonSum = (acc[curr.id].minggonSum || 0) + (curr.ppi_not_entry || 0);
+            acc[curr.id].hasMinggon = true;
+          } else {
+            acc[curr.id].ppiOldSum = (acc[curr.id].ppiOldSum || 0) + (curr.ppi_not_entry || 0);
+            acc[curr.id].hasOld = true;
+          }
+          acc[curr.id].ppi += curr.ppi_not_entry || 0; // Raw sum for display
+          
           // Logic for Validasi: Take latest month's value instead of sum
           const periodRank: Record<string, number> = {
             'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4,
@@ -102,7 +113,13 @@ const DetailedReport = () => {
           const p_rd  = calcPts(curr.recalculate_delinquency || 0,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
           const p_tp  = calcPts(curr.transfer_pencairan || 0,        [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
           const p_sg  = calcPts(curr.salah_generate || 0,            [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ppi = calcPts(curr.ppi_not_entry || 0,             [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+          let p_ppi = 0;
+          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          if (isMinggon) {
+            p_ppi = (curr.ppi_not_entry || 0) > 0 ? 10 : 0;
+          } else {
+            p_ppi = calcPts(curr.ppi_not_entry || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+          }
           const p_val = calcPts(curr.validasi || 0,                  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_tpk = calcPts(curr.tiket_perbaikan || 0,           [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
           const p_ll  = 10 + (curr.lain_lain || 0);
@@ -127,7 +144,17 @@ const DetailedReport = () => {
           const p_rd  = calcPts(s.rd,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
           const p_tp  = calcPts(s.tp,  [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
           const p_sg  = calcPts(s.sg,  [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ppi = calcPts(s.ppi, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+          let p_ppi = 0;
+          if (s.hasMinggon && !s.hasOld) {
+            p_ppi = (s.minggonSum || 0) > 0 ? 10 : 0;
+          } else if (s.hasOld && !s.hasMinggon) {
+            p_ppi = calcPts(s.ppiOldSum || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+          } else {
+            // Mixed
+            let old_pts = calcPts(s.ppiOldSum || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+            p_ppi = old_pts;
+            if ((s.minggonSum || 0) > 0 && p_ppi < 10) p_ppi = 10;
+          }
           const p_val = calcPts(s.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
           const p_tpk = calcPts(s.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
           const p_ll  = 10 + (s.ll || 0);
@@ -149,9 +176,9 @@ const DetailedReport = () => {
           if (lastVal > prevVal) trendStatus = 'up';
           else if (lastVal < prevVal) trendStatus = 'down';
 
-          let color = '#ef4444';
+          let color = 'var(--color-danger)';
           if (totalKPI >= 90) color = '#22c55e';
-          else if (totalKPI >= 70) color = '#f59e0b';
+          else if (totalKPI >= 70) color = 'var(--color-warning)';
 
           return { ...s, totalKPI, kpiColor: color, trendData, trendStatus, keteranganHistory: s.keteranganHistory };
         });
@@ -172,7 +199,7 @@ const DetailedReport = () => {
   const handleExportCSV = () => {
     if (data.length === 0) return;
     
-    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "PPI", "VAL", "TPK", "LL", "Point (%)", "Tren"];
+    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "MINGGON", "VAL", "TPK", "LL", "Point (%)", "Tren"];
     
     const rows = data.map((s, index) => [
       index + 1,
@@ -305,7 +332,7 @@ const DetailedReport = () => {
                 <th className="center-text">
                   <div className="header-icon-wrapper">
                     <ClipboardType size={11} />
-                    <span>PPI NOT ENTRY</span>
+                    <span>MINGGON</span>
                   </div>
                 </th>
                 <th className="center-text">
@@ -369,7 +396,7 @@ const DetailedReport = () => {
                     <td className="center-text mono" data-label="Recalculate Delinquency">{staff.rd || '-'}</td>
                     <td className="center-text mono" data-label="Transfer Pencairan">{staff.tp || '-'}</td>
                     <td className="center-text mono" data-label="Salah Generate">{staff.sg || '-'}</td>
-                    <td className="center-text mono" data-label="PPI Not Entry">{staff.ppi || '-'}</td>
+                    <td className="center-text mono" data-label="Minggon">{staff.ppi === 0 ? '-' : staff.ppi}</td>
                     <td className="center-text mono" data-label="Validasi">{staff.val || '-'}</td>
                     <td className="center-text mono" data-label="Tiket Perbaikan">{staff.tpk || '-'}</td>
                     <td className="center-text mono" data-label="Lain-lain">
@@ -409,9 +436,9 @@ const DetailedReport = () => {
                                 <Line 
                                   type="monotone" 
                                   dataKey="score" 
-                                  stroke={staff.trendStatus === 'up' ? '#22c55e' : staff.trendStatus === 'down' ? '#ef4444' : '#94a3b8'} 
+                                  stroke={staff.trendStatus === 'up' ? '#22c55e' : staff.trendStatus === 'down' ? 'var(--color-danger)' : '#94a3b8'} 
                                   strokeWidth={3} 
-                                  dot={{ r: 2, fill: staff.trendStatus === 'up' ? '#22c55e' : staff.trendStatus === 'down' ? '#ef4444' : '#94a3b8' }} 
+                                  dot={{ r: 2, fill: staff.trendStatus === 'up' ? '#22c55e' : staff.trendStatus === 'down' ? 'var(--color-danger)' : '#94a3b8' }} 
                                   animationDuration={1000}
                                 />
                               </LineChart>

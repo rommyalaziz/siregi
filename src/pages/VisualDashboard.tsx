@@ -50,9 +50,9 @@ const VisualDashboard = () => {
           'Delinquency': acc['Delinquency'] + (curr.recalculate_delinquency || 0),
           'Transfer': acc['Transfer'] + (curr.transfer_pencairan || 0),
           'Generate': acc['Generate'] + (curr.salah_generate || 0),
-          'PPI': acc['PPI'] + (curr.ppi_not_entry || 0),
+          'Minggon': acc['Minggon'] + (curr.ppi_not_entry || 0),
           'Validasi': acc['Validasi'] + (curr.validasi || 0),
-        }), { 'Voucher': 0, 'Unapprove': 0, 'Delinquency': 0, 'Transfer': 0, 'Generate': 0, 'PPI': 0, 'Validasi': 0 });
+        }), { 'Voucher': 0, 'Unapprove': 0, 'Delinquency': 0, 'Transfer': 0, 'Generate': 0, 'Minggon': 0, 'Validasi': 0 });
 
         const radarData = Object.keys(errTotals).map(key => ({
           subject: key,
@@ -108,7 +108,7 @@ const VisualDashboard = () => {
         {[
           { label: 'Avg KPI Score', value: `${stats.avgKpi}%`, icon: Activity, color: 'var(--neon-green)' },
           { label: 'Active Staff', value: stats.activeStaff, icon: Users, color: 'var(--neon-blue)' },
-          { label: 'Total Errors', value: stats.totalErrors, icon: AlertCircle, color: '#ef4444' },
+          { label: 'Total Errors', value: stats.totalErrors, icon: AlertCircle, color: 'var(--color-danger)' },
           { label: 'Trend Factor', value: '+12.4%', icon: TrendingUp, color: 'var(--neon-purple)' },
         ].map((s, i) => (
           <div key={i} className="glass-card">

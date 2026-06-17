@@ -410,7 +410,7 @@ const DataUser = () => {
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Nama Cabang</label>
                 <select
                   className="btn btn-outline w-full"
-                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left' }}
+                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left' }}
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value)}
                   disabled={isEditMode}
@@ -430,7 +430,7 @@ const DataUser = () => {
                   type="email"
                   placeholder="Masukkan email"
                   className="btn btn-outline w-full"
-                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
+                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -443,7 +443,7 @@ const DataUser = () => {
                   type="text"
                   placeholder="Masukkan username"
                   className="btn btn-outline w-full"
-                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
+                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -458,7 +458,7 @@ const DataUser = () => {
                     type={showInputPassword ? 'text' : 'password'}
                     placeholder="Masukkan password"
                     className="btn btn-outline w-full"
-                    style={{ height: '40px', padding: '0 40px 0 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
+                    style={{ height: '40px', padding: '0 40px 0 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal' }}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -478,7 +478,7 @@ const DataUser = () => {
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Status Akun</label>
                 <select
                   className="btn btn-outline w-full"
-                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left' }}
+                  style={{ height: '40px', padding: '0 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left' }}
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
@@ -495,7 +495,7 @@ const DataUser = () => {
               <textarea
                 placeholder="Catatan tambahan..."
                 className="btn btn-outline w-full"
-                style={{ minHeight: '80px', padding: '10px 12px', fontSize: '13px', background: 'white', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'inherit', resize: 'vertical' }}
+                style={{ minHeight: '80px', padding: '10px 12px', fontSize: '13px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '6px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'inherit', resize: 'vertical' }}
                 value={keterangan}
                 onChange={(e) => setKeterangan(e.target.value)}
               />
@@ -721,13 +721,13 @@ const DataUser = () => {
 
         <div style={{ display: 'grid', gap: '8px' }}>
           {logs.length === 0 ? (
-            <div style={{ padding: '16px', textAlign: 'center', background: 'white', borderRadius: '8px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', fontSize: '12px' }}>
+            <div style={{ padding: '16px', textAlign: 'center', background: 'var(--color-bg-card)', borderRadius: '8px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', fontSize: '12px' }}>
               Belum ada log aktivitas OwnCloud.
             </div>
           ) : (
             logs.map((log) => (
               <div key={log.id} style={{ 
-                background: 'white', 
+                background: 'var(--color-bg-card)', 
                 padding: '10px 14px', 
                 borderRadius: '8px', 
                 border: '1px solid var(--color-border)',

@@ -85,14 +85,14 @@ const StaffProgress = () => {
           
           // Determine Status based on Total KPI (New Thresholds)
           let status = 'critical';
-          let color = '#ef4444'; // Red
+          let color = 'var(--color-danger)'; // Red
           
           if (totalKPI >= 90) {
             status = 'on-track';
             color = '#22c55e'; // Green
           } else if (totalKPI >= 70) {
             status = 'delayed';
-            color = '#f59e0b'; // Yellow/Orange
+            color = 'var(--color-warning)'; // Yellow/Orange
           }
 
           return { ...s, totalKPI, status, kpiColor: color };
@@ -157,17 +157,34 @@ const StaffProgress = () => {
         const sortedRecords = [...records].sort((a, b) => (periodRank[b.periode] || 0) - (periodRank[a.periode] || 0));
         const latestVal = sortedRecords[0]?.validasi || 0;
 
-        const totals = records.reduce((acc, curr) => ({
-          rv: (acc.rv || 0) + (curr.release_voucher || 0),
-          up: (acc.up || 0) + (curr.unapprove_pengajuan || 0),
-          rd: (acc.rd || 0) + (curr.recalculate_delinquency || 0),
-          tp: (acc.tp || 0) + (curr.transfer_pencairan || 0),
-          sg: (acc.sg || 0) + (curr.salah_generate || 0),
-          ppi: (acc.ppi || 0) + (curr.ppi_not_entry || 0),
-          val: latestVal, // Correct: Use latest value instead of sum
-          tpk: (acc.tpk || 0) + (curr.tiket_perbaikan || 0),
-          ll: (acc.ll || 0) + (curr.lain_lain || 0),
-        }), {});
+        let ppi_old_sum = 0;
+        let minggon_sum = 0;
+        let hasMinggonMonth = false;
+        let hasOldMonth = false;
+
+        const totals = records.reduce((acc, curr) => {
+          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          if (isMinggon) {
+            minggon_sum += (curr.ppi_not_entry || 0);
+            hasMinggonMonth = true;
+          } else {
+            ppi_old_sum += (curr.ppi_not_entry || 0);
+            hasOldMonth = true;
+          }
+
+          return {
+            rv: (acc.rv || 0) + (curr.release_voucher || 0),
+            up: (acc.up || 0) + (curr.unapprove_pengajuan || 0),
+            rd: (acc.rd || 0) + (curr.recalculate_delinquency || 0),
+            tp: (acc.tp || 0) + (curr.transfer_pencairan || 0),
+            sg: (acc.sg || 0) + (curr.salah_generate || 0),
+            val: latestVal, // Correct: Use latest value instead of sum
+            tpk: (acc.tpk || 0) + (curr.tiket_perbaikan || 0),
+            ll: (acc.ll || 0) + (curr.lain_lain || 0),
+            // Store raw sum for display
+            ppi: (acc.ppi || 0) + (curr.ppi_not_entry || 0)
+          };
+        }, {});
 
         // Calculation logic to get points from totals
         const calcPts = (val: number, params: any) => {
@@ -182,7 +199,21 @@ const StaffProgress = () => {
         const p_rd  = calcPts(totals.rd,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
         const p_tp  = calcPts(totals.tp,  [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
         const p_sg  = calcPts(totals.sg,  [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-        const p_ppi = calcPts(totals.ppi, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+        
+        let p_ppi = 0;
+        if (hasMinggonMonth && !hasOldMonth) {
+          p_ppi = minggon_sum > 0 ? 10 : 0;
+        } else if (hasOldMonth && !hasMinggonMonth) {
+          p_ppi = calcPts(ppi_old_sum, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+        } else {
+          // Campuran: Prioritaskan logika old + minggon cap 10?
+          // Atau jika ada minggon, ambil 5 poin max dari old, 5 dari minggon? 
+          // Sederhananya, pakai skor old, lalu jika minggon_sum > 0 bantu + poin hingga mentok 10.
+          let old_pts = calcPts(ppi_old_sum, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
+          p_ppi = old_pts;
+          if (minggon_sum > 0 && p_ppi < 10) p_ppi = 10;
+        }
+
         const p_val = calcPts(totals.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
         const p_tpk = calcPts(totals.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
         const p_ll  = 10 + (totals.ll || 0);
@@ -217,7 +248,7 @@ const StaffProgress = () => {
       s.recalculate_delinquency || 0,
       s.transfer_pencairan || 0,
       s.salah_generate || 0,
-      s.ppi_not_entry || 0,
+      s.ppi_not_entry || 0, // Now "Minggon"
       s.validasi || 0,
       s.tiket_perbaikan || 0,
       s.lain_lain || 0,
@@ -342,7 +373,7 @@ const StaffProgress = () => {
                 <th className="center-text">
                   <div className="header-icon-wrapper">
                     <ClipboardType size={11} />
-                    <span>PPI NOT ENTRY</span>
+                    <span>MINGGON</span>
                   </div>
                 </th>
                 <th className="center-text">
@@ -424,7 +455,7 @@ const StaffProgress = () => {
                       <td className="center-text mono" data-label="Recalculate Delinquency">{staff.recalculate_delinquency === 0 ? '-' : staff.recalculate_delinquency}</td>
                       <td className="center-text mono" data-label="Transfer Pencairan">{staff.transfer_pencairan === 0 ? '-' : staff.transfer_pencairan}</td>
                       <td className="center-text mono" data-label="Salah Generate">{staff.salah_generate === 0 ? '-' : staff.salah_generate}</td>
-                      <td className="center-text mono" data-label="PPI Not Entry">{staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry}</td>
+                      <td className="center-text mono" data-label="Minggon">{staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry}</td>
                       <td className="center-text mono" data-label="Validasi">{staff.validasi === 0 ? '-' : staff.validasi}</td>
                       <td className="center-text mono" data-label="Tiket Perbaikan">{staff.tiket_perbaikan === 0 ? '-' : staff.tiket_perbaikan}</td>
                       <td className="center-text mono" data-label="Lain-lain">
@@ -564,7 +595,7 @@ const StaffProgress = () => {
                     <span className="value">{cumulativeData.sg}</span>
                   </div>
                   <div className="cum-item">
-                    <span className="label">PPI Not Entry</span>
+                    <span className="label">Minggon</span>
                     <span className="value">{cumulativeData.ppi}</span>
                   </div>
                   <div className="cum-item">

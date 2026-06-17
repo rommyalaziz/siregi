@@ -15,7 +15,7 @@
 }
 
 .kpi-modal-content {
-  background: white;
+  background: var(--color-bg-card);
   width: 100%;
   max-width: 1200px;
   max-height: 95vh;
@@ -33,7 +33,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--color-bg-card);
 }
 
 .header-title {
@@ -50,7 +50,7 @@
 }
 
 .close-btn {
-  background: white;
+  background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   width: 36px;
   height: 36px;
@@ -91,7 +91,7 @@
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: white;
+  background: var(--color-bg-card);
 }
 
 .parameter-table {
@@ -127,7 +127,7 @@
 .sticky-col {
   position: sticky;
   left: 0;
-  background: white;
+  background: var(--color-bg-card);
   z-index: 10;
   min-width: 160px;
   border-right: 2px solid var(--color-border) !important;

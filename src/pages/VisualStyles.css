@@ -1,17 +1,17 @@
 :root {
-  --neon-green: #22c55e;
-  --neon-purple: #a855f7;
-  --neon-blue: #3b82f6;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --dark-bg: #0f172a;
+  --neon-green: #10B981;
+  --neon-purple: #8B5CF6;
+  --neon-blue: #6366F1;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: #E2E8F0;
+  --dark-bg: #F8F9FB;
 }
 
 .visual-dashboard {
   padding: 24px;
   background-color: var(--dark-bg);
   min-height: calc(100vh - 64px);
-  color: white;
+  color: var(--color-text-main);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -21,7 +21,7 @@
 .visual-header h1 {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(to right, var(--neon-green), var(--neon-blue));
+  background: linear-gradient(to right, var(--color-primary), var(--neon-purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 4px;
@@ -34,26 +34,26 @@
 }
 
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--color-bg-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: var(--shadow-md);
   transition: transform 0.3s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-border-hover);
 }
 
 .glass-card h3 {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -74,13 +74,13 @@
 
 .stat-value {
   font-size: 24px;
-  font-weight: 700;
-  color: var(--neon-green);
+  font-weight: 800;
+  color: var(--color-primary);
 }
 
 .stat-label {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-muted);
   text-transform: uppercase;
 }
 
@@ -95,21 +95,21 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-bg-main);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   transition: all 0.2s ease;
 }
 
 .performer-card:hover {
-  background: rgba(22, 163, 74, 0.1);
-  border-color: var(--neon-green);
+  background: rgba(99, 102, 241, 0.05);
+  border-color: var(--color-primary);
 }
 
 .performer-rank {
   font-size: 18px;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.1);
+  color: var(--color-border);
   width: 24px;
 }
 
@@ -124,27 +124,27 @@
 
 .performer-branch {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-muted);
 }
 
 .performer-score {
-  font-family: 'Inter', monospace;
+  font-family: var(--font-family);
   font-weight: 700;
-  color: var(--neon-green);
+  color: var(--color-primary);
 }
 
 /* Recharts Customization */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke: rgba(255, 255, 255, 0.05);
+  stroke: var(--color-border);
 }
 
 .recharts-default-tooltip {
-  background-color: rgba(15, 23, 42, 0.9) !important;
-  border: 1px solid var(--glass-border) !important;
-  backdrop-filter: blur(8px) !important;
+  background-color: var(--color-bg-card) !important;
+  border: 1px solid var(--color-border) !important;
+  backdrop-filter: none !important;
   border-radius: 8px !important;
-  color: white !important;
+  color: var(--color-text-main) !important;
 }
 
 .radar-section {

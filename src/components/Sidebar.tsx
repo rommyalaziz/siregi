@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, ChevronRight } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import './Sidebar.css';
 
@@ -47,15 +47,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="sidebar-header">
           <div className="logo-box">
             <div className="logo-icon">
-              <LayoutDashboard size={16} color="white" />
+              <Zap size={22} color="#6366f1" fill="rgba(99, 102, 241, 0.4)" />
             </div>
             <span className="logo-text">SIREGI</span>
           </div>
-          {/* Mobile Close Button */}
           <button className="sidebar-close-btn mobile-only" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
+
+        {user && (
+          <div className="sidebar-profile">
+            <div className="sidebar-avatar">
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.fullName} />
+              ) : (
+                <User size={24} />
+              )}
+            </div>
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">{user.fullName || 'User'}</span>
+            </div>
+          </div>
+        )}
       
       <nav className="sidebar-nav">
         <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
@@ -80,6 +94,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <NavLink to="/kunjungan" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <ClipboardCheck size={16} />
               <span>Kunjungan</span>
+            </NavLink>
+            <NavLink to="/admin/rekap-pengeluaran" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Banknote size={16} />
+              <span>Rekap Pengeluaran</span>
             </NavLink>
             <NavLink to="/admin/data-user" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Users size={16} />

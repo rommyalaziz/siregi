@@ -1,37 +1,58 @@
 :root {
-  /* Color Palette - Modern Corporate */
-  --color-primary: #0F766E; /* Teal 700 - Professional green/blue */
-  --color-secondary: #0D9488; /* Teal 600 */
-  --color-accent: #14B8A6; /* Teal 500 */
-  --color-bg-main: #F8FAFC; /* Soft light gray */
-  --color-bg-card: #FFFFFF; /* Crisp white */
-  --color-text-main: #1F2937; /* Darker grey for punchy typography */
-  --color-text-muted: #6B7280; /* Light gray text */
-  --color-border: #E5E7EB; /* Light border */
+  /* Font Family */
+  --font-family: 'Plus Jakarta Sans', sans-serif;
+
+  /* Latar Belakang */
+  --color-bg-main: #F8F9FB; /* Latar utama putih/off-white */
+  --color-bg-card: #FFFFFF; /* Latar kartu putih bersih */
+  --color-bg-card-hover: #FAFAFA; /* Latar saat di-hover */
+  --color-bg-input: #FFFFFF; /* Latar input dan select */
+
+  /* Warna Aksen / Global Colors */
+  --color-primary: #6366F1; /* Ungu/Indigo solid untuk tombol utama */
+  --color-primary-hover: #4F46E5;
+  --color-secondary: #6366F1; /* Menyokong tombol utama */
+  --color-accent: #818CF8;
+  
+  /* Badge Icon Colors (untuk dashboard) */
+  --color-badge-pink: #FDF2F8;
+  --color-icon-pink: #EC4899;
+  --color-badge-blue: #EFF6FF;
+  --color-icon-blue: #3B82F6;
+  --color-badge-purple: #F5F3FF;
+  --color-icon-purple: #8B5CF6;
+  --color-badge-lightblue: #ECFEFF;
+  --color-icon-lightblue: #06B6D4;
+  --color-badge-orange: #FFF7ED;
+  --color-icon-orange: #F97316;
+
+  /* Teks & Garis */
+  --color-text-main: #1E293B; /* Teks abu sangat gelap */
+  --color-text-muted: #64748B; /* Teks abu lembut */
+  --color-border: #E2E8F0; /* Border abu sangat halus */
+  --color-border-hover: #CBD5E1;
+
+  /* Status (Light Mode Friendly) */
   --color-success: #10B981;
+  --color-bg-success: #ECFDF5;
   --color-warning: #F59E0B;
+  --color-bg-warning: #FEF3C7;
   --color-danger: #EF4444;
-
-  /* Mobile Touch Targets */
-  --btn-min-height: 44px;
-
-  /* Typography */
-  --font-family: 'Inter', sans-serif;
+  --color-bg-danger: #FEF2F2;
   
-  /* Shadows - deeper, softer */
-  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 16px -2px rgba(0, 0, 0, 0.06), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 16px 24px -4px rgba(0, 0, 0, 0.06), 0 8px 12px -4px rgba(0, 0, 0, 0.04);
+  /* Utilities */
+  --shadow-glow: 0 4px 14px 0 rgba(99, 102, 241, 0.2);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
   
-  /* Border Radius - friendlier and premium */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  /* Spacing & Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem; /* Lebih besar untuk efek modern */
   --radius-full: 9999px;
-
-  /* Transitions */
-  --transition-fast: 0.15s ease-in-out;
-  --transition-normal: 0.3s ease-in-out;
+  --transition-fast: 0.2s ease-in-out;
+  --transition-normal: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -48,9 +69,37 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+select, option {
+  background-color: var(--color-bg-card);
+  color: var(--color-text-main);
+}
+
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* Custom Scrollbar for Light Mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
 }
 
 button {
@@ -61,7 +110,7 @@ button {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 600; /* Semibold/bold default untuk heading */
   color: var(--color-text-main);
 }
 
@@ -72,15 +121,16 @@ ul {
 /* Utilities */
 .card {
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  padding: 12px;
-  transition: box-shadow var(--transition-fast);
+  border-radius: var(--radius-lg); /* Rounded besar */
+  box-shadow: var(--shadow-md); /* Shadow halus */
+  border: 1px solid rgba(255, 255, 255, 0.5); /* Hampir tanpa border / glass efek ringan */
+  padding: 20px; /* Padding sedikit lebih besar biar lega */
+  transition: all var(--transition-normal);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
 }
 
 .flex { display: flex; }
@@ -99,30 +149,35 @@ ul {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
+  padding: 10px 20px;
   min-height: var(--btn-min-height);
-  border-radius: var(--radius-sm);
-  font-weight: 500;
+  border-radius: var(--radius-full); /* Fully rounded (pill shape) */
+  font-weight: 600; /* Semibold */
   font-size: 14px;
   transition: all var(--transition-fast);
   gap: 8px;
 }
 
 .btn-primary {
-  background-color: var(--color-secondary);
+  background-color: var(--color-primary); /* Ungu/Indigo solid */
   color: #fff;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
 }
 .btn-primary:hover {
-  background-color: #24634c;
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
   background-color: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-main);
+  font-weight: 500;
 }
 .btn-outline:hover {
   background-color: var(--color-bg-main);
+  border-color: var(--color-border-hover);
 }
 
 /* Status Badges */
@@ -136,8 +191,8 @@ ul {
   border: 1px solid transparent;
 }
 .badge.on-track { background-color: #ECFDF5; color: #065F46; border-color: #A7F3D0; }
-.badge.delayed { background-color: #FFFBEB; color: #92400E; border-color: #FDE68A; }
-.badge.critical { background-color: #FEF2F2; color: #991B1B; border-color: #FECACA; }
+.badge.delayed { background-color: rgba(245, 158, 11, 0.1); color: #92400E; border-color: #FDE68A; }
+.badge.critical { background-color: rgba(239, 68, 68, 0.1); color: #991B1B; border-color: #FECACA; }
 
 /* Responsive Utilities */
 .mobile-only {

@@ -29,8 +29,8 @@
 .login-image-overlay {
   position: absolute;
   inset: 0;
-  /* Soft green transparent overlay 70% opacity over the left side only */
-  background: rgba(46, 125, 97, 0.75);
+  /* Dark navy transparent overlay */
+  background: rgba(13, 27, 42, 0.75);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1;
@@ -84,14 +84,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Glassmorphism white panel so the background peeks through */
-  background-color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   padding: 40px;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.08);
   z-index: 10;
-  border-left: 1px solid rgba(255, 255, 255, 0.4);
+  border-left: 1px solid var(--color-border);
 }
 
 .login-form-box {
@@ -117,13 +116,13 @@
 }
 
 .login-error {
-  color: #991B1B;
+  color: var(--color-danger);
   margin-bottom: 24px;
   font-size: 13px;
-  background: rgba(254, 242, 242, 0.8);
+  background: var(--color-bg-danger);
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #FECACA;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 form .form-group {
@@ -145,24 +144,25 @@ form input {
   border-radius: var(--radius-sm);
   font-size: 15px;
   transition: all var(--transition-fast);
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-bg-input);
+  color: var(--color-text-main);
   font-family: inherit;
   outline: none;
 }
 
 form input:focus {
   border-color: var(--color-primary);
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 4px rgba(168, 230, 207, 0.3);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .login-submit-btn {
   width: 100%;
   padding: 14px;
-  background-color: var(--color-secondary);
+  background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -171,9 +171,9 @@ form input:focus {
 }
 
 .login-submit-btn:hover {
-  background-color: #1F5E48;
+  background-color: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 97, 0.25);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
 .login-submit-btn:active {
@@ -186,7 +186,7 @@ form input:focus {
   }
   .login-form-section {
     flex: 1;
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: var(--color-bg-card);
     border-left: none;
   }
 }

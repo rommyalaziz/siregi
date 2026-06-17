@@ -11,6 +11,7 @@ import DetailedReport from './pages/DetailedReport';
 import MdisgoMonitoring from './pages/MdisgoMonitoring';
 import Kunjungan from './pages/Kunjungan';
 import DataUser from './pages/DataUser';
+import RekapPengeluaran from './pages/RekapPengeluaran';
 import { useIdleTimer } from './hooks/useIdleTimer';
 
 // Protected Route Component
@@ -19,6 +20,19 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   
   if (!session) {
     return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin Only Route Component
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const session = sessionStorage.getItem('msa_session');
+  const user = session ? JSON.parse(session) : null;
+  const isAdmin = user?.role?.toLowerCase().includes('admin');
+  
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
@@ -43,6 +57,7 @@ function AppContent() {
         <Route path="/kunjungan" element={<Kunjungan />} />
         <Route path="/admin/update" element={<AdminStaffUpdate />} />
         <Route path="/admin/data-user" element={<DataUser />} />
+        <Route path="/admin/rekap-pengeluaran" element={<AdminRoute><RekapPengeluaran /></AdminRoute>} />
       </Route>
 
       {/* Catch all redirect to login */}

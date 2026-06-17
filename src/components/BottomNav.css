@@ -39,5 +39,5 @@
 
 .bottom-nav-item.active svg {
   color: var(--color-primary);
-  fill: rgba(15, 118, 110, 0.1); /* Match the primary teal color */
+  fill: rgba(99, 102, 241, 0.1); /* Match the primary indigo color */
 }

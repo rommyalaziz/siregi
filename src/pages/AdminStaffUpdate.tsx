@@ -8,9 +8,13 @@ const AdminStaffUpdate = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState('');
-  const [selectedPeriode, setSelectedPeriode] = useState('Mei');
-  const [selectedTahun, setSelectedTahun] = useState('2026');
-  
+  const indonesianMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const currentDate = new Date();
+  const currentMonth = indonesianMonths[currentDate.getMonth()];
+  const currentYear = currentDate.getFullYear().toString();
+
+  const [selectedPeriode, setSelectedPeriode] = useState(currentMonth);
+  const [selectedTahun, setSelectedTahun] = useState(currentYear);
   // Avatar state
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -31,9 +35,19 @@ const AdminStaffUpdate = () => {
   });
 
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [globalSettings, setGlobalSettings] = useState({ month: 'Mei', year: '2026' });
+  const [globalSettings, setGlobalSettings] = useState({ 
+    month: currentMonth, 
+    year: currentYear 
+  });
   const [saveGlobalLoading, setSaveGlobalLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [initLoading, setInitLoading] = useState(false);
+  const [initResult, setInitResult] = useState<{ created: number; skipped: number } | null>(null);
+
+  // Edit Profil State
+  const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({ name: '', branch: '' });
+  const [editProfileLoading, setEditProfileLoading] = useState(false);
 
   const categories = [
     { id: 'release_voucher', name: 'Release Voucher' },
@@ -41,7 +55,7 @@ const AdminStaffUpdate = () => {
     { id: 'recalculate_delinquency', name: 'Recalculate Delinquency' },
     { id: 'transfer_pencairan', name: 'Transfer Pencairan' },
     { id: 'salah_generate', name: 'Salah Generate' },
-    { id: 'ppi_not_entry', name: 'PPI Not Entry' },
+    { id: 'ppi_not_entry', name: 'Minggon' },
     { id: 'validasi', name: 'Validasi' },
     { id: 'tiket_perbaikan', name: 'Tiket Perbaikan' },
     { id: 'lain_lain', name: 'Lain-lain (+/- poin)' },
@@ -295,6 +309,103 @@ const AdminStaffUpdate = () => {
     }
   };
 
+  const handleInitMonth = async () => {
+    const confirmMsg = `Inisialisasi semua staff untuk periode ${selectedPeriode} ${selectedTahun}?\n\nStaff yang belum ada record di bulan ini akan dibuat otomatis dengan nilai 0.\nStaff yang sudah ada tidak akan diubah.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setInitLoading(true);
+    setInitResult(null);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const tahunInt = parseInt(selectedTahun);
+
+      // 1. Ambil semua staff unik dari staff_progress
+      const { data: allStaffRaw, error: staffErr } = await supabase
+        .from('staff_progress')
+        .select('id, name, branch, avatar_url');
+
+      if (staffErr) throw staffErr;
+
+      // Deduplicate by staff id
+      const uniqueMap = new Map<string, any>();
+      allStaffRaw?.forEach(s => {
+        if (!uniqueMap.has(s.id)) uniqueMap.set(s.id, s);
+      });
+      const allStaff = Array.from(uniqueMap.values());
+
+      // 2. Ambil staff yang sudah ada record di bulan ini
+      const { data: existingRaw, error: existErr } = await supabase
+        .from('staff_progress')
+        .select('id')
+        .eq('periode', selectedPeriode)
+        .eq('tahun', tahunInt);
+
+      if (existErr) throw existErr;
+
+      const existingIds = new Set(existingRaw?.map(r => r.id) || []);
+
+      // 3. Filter staff yang belum ada
+      const toCreate = allStaff.filter(s => !existingIds.has(s.id));
+
+      if (toCreate.length === 0) {
+        setInitResult({ created: 0, skipped: allStaff.length });
+        setMessage({
+          type: 'success',
+          text: `Semua ${allStaff.length} staff sudah memiliki data untuk ${selectedPeriode} ${selectedTahun}.`
+        });
+        return;
+      }
+
+      // 4. Batch insert dengan nilai default 0
+      const payload = toCreate.map(s => ({
+        id: s.id,
+        name: s.name,
+        branch: s.branch,
+        avatar_url: s.avatar_url || null,
+        periode: selectedPeriode,
+        tahun: tahunInt,
+        release_voucher: 0,
+        unapprove_pengajuan: 0,
+        recalculate_delinquency: 0,
+        transfer_pencairan: 0,
+        salah_generate: 0,
+        ppi_not_entry: 0,
+        validasi: 0,
+        tiket_perbaikan: 0,
+        lain_lain: 0,
+        lain_lain_keterangan: ''
+      }));
+
+      const { error: insertErr } = await supabase
+        .from('staff_progress')
+        .insert(payload);
+
+      if (insertErr) throw insertErr;
+
+      const result = { created: toCreate.length, skipped: existingIds.size };
+      setInitResult(result);
+      setMessage({
+        type: 'success',
+        text: `✅ ${result.created} staff berhasil diinisialisasi untuk ${selectedPeriode} ${selectedTahun}. ${result.skipped > 0 ? `${result.skipped} staff sudah ada (tidak diubah).` : ''}`
+      });
+
+      // Refresh staff list & activity
+      fetchRecentActivity();
+
+      // Auto-pilih staff pertama yang baru dibuat
+      if (toCreate.length > 0) {
+        setSelectedStaffId(toCreate[0].id);
+      }
+
+    } catch (err: any) {
+      console.error('Init month error:', err);
+      setMessage({ type: 'error', text: 'Gagal inisialisasi: ' + (err.message || 'Unknown error') });
+    } finally {
+      setInitLoading(false);
+    }
+  };
+
   const handleUpdateGlobalSettings = async () => {
     setSaveGlobalLoading(true);
     try {
@@ -312,6 +423,36 @@ const AdminStaffUpdate = () => {
       setMessage({ type: 'error', text: err.message || 'Gagal memperbarui periode global' });
     } finally {
       setSaveGlobalLoading(false);
+    }
+  };
+
+  const handleEditProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editProfileData.name || !editProfileData.branch) return;
+    
+    setEditProfileLoading(true);
+    try {
+      const { error } = await supabase
+        .from('staff_progress')
+        .update({ name: editProfileData.name, branch: editProfileData.branch })
+        .eq('id', selectedStaffId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setStaffList(prev => prev.map(s => 
+        s.id === selectedStaffId 
+          ? { ...s, name: editProfileData.name, branch: editProfileData.branch } 
+          : s
+      ));
+      
+      setMessage({ type: 'success', text: `Profil staf berhasil diperbarui menjadi ${editProfileData.name} (${editProfileData.branch}).` });
+      setEditProfileModalOpen(false);
+      fetchRecentActivity();
+    } catch (err: any) {
+      alert('Gagal memperbarui profil: ' + (err.message || 'Unknown error'));
+    } finally {
+      setEditProfileLoading(false);
     }
   };
 
@@ -334,7 +475,7 @@ const AdminStaffUpdate = () => {
           
           {/* Global Settings Control */}
           <div className="global-settings-panel" style={{ 
-            background: 'white', 
+            background: 'var(--color-bg-card)', 
             padding: '10px 16px', 
             borderRadius: '12px', 
             border: '1px solid var(--color-border)',
@@ -416,13 +557,30 @@ const AdminStaffUpdate = () => {
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
             </div>
 
+            <div style={{ marginRight: 'auto' }}>
+              <button 
+                type="button"
+                className="btn btn-outline"
+                style={{ fontSize: '11px', padding: '4px 8px', height: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => {
+                  const staff = staffList.find(s => s.id === selectedStaffId);
+                  if (staff) {
+                    setEditProfileData({ name: staff.name, branch: staff.branch });
+                    setEditProfileModalOpen(true);
+                  }
+                }}
+              >
+                ✏️ Edit Profil
+              </button>
+            </div>
+
             {/* Selectors */}
             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pilih Staf</label>
                 <select 
                   className="btn btn-outline w-full" 
-                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'white' }}
+                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'var(--color-bg-card)' }}
                   value={selectedStaffId}
                   onChange={(e) => setSelectedStaffId(e.target.value)}
                 >
@@ -434,7 +592,7 @@ const AdminStaffUpdate = () => {
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tahun</label>
                 <select 
                   className="btn btn-outline w-full" 
-                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'white' }}
+                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'var(--color-bg-card)' }}
                   value={selectedTahun}
                   onChange={(e) => setSelectedTahun(e.target.value)}
                 >
@@ -448,7 +606,7 @@ const AdminStaffUpdate = () => {
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bulan</label>
                 <select 
                   className="btn btn-outline w-full" 
-                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'white' }}
+                  style={{ height: '36px', padding: '0 10px', fontSize: '13px', background: 'var(--color-bg-card)' }}
                   value={selectedPeriode}
                   onChange={(e) => setSelectedPeriode(e.target.value)}
                 >
@@ -457,8 +615,62 @@ const AdminStaffUpdate = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Tombol Inisialisasi Bulan — di header agar selalu terlihat */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#7c3aed', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inisialisasi Bulan</label>
+                <button
+                  type="button"
+                  onClick={handleInitMonth}
+                  disabled={initLoading || loading}
+                  title={`Buat record default (nilai 0) untuk semua staff di ${selectedPeriode} ${selectedTahun}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    height: '36px',
+                    width: '100%',
+                    padding: '0 12px',
+                    background: initLoading ? '#e2e8f0' : 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: initLoading ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 6px rgba(79,70,229,0.35)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {initLoading
+                    ? <><Loader2 className="animate-spin" size={14} /><span>Proses...</span></>
+                    : <><span>🚀</span><span>Inisialisasi {selectedPeriode}</span></>}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Banner hasil inisialisasi */}
+          {initResult && (
+            <div style={{
+              padding: '10px 16px',
+              background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)',
+              borderBottom: '1px solid #bbf7d0',
+              fontSize: '13px',
+              color: '#166534',
+              display: 'flex',
+              gap: '20px',
+              flexWrap: 'wrap',
+              alignItems: 'center'
+            }}>
+              <span>✅ <strong>{initResult.created}</strong> staff baru dibuat</span>
+              {initResult.skipped > 0 && <span>⏭️ <strong>{initResult.skipped}</strong> sudah ada (tidak diubah)</span>}
+              <span style={{ color: '#047857', fontWeight: 600 }}>Total <strong>{initResult.created + initResult.skipped}</strong> staff terdaftar untuk {selectedPeriode} {selectedTahun}</span>
+              <button onClick={() => setInitResult(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#166534', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+            </div>
+          )}
 
           <form onSubmit={handleUpdate} style={{ padding: '20px' }}>
             
@@ -517,7 +729,7 @@ const AdminStaffUpdate = () => {
                           fontSize: '15px', 
                           fontWeight: '700', 
                           padding: '0',
-                          background: 'white',
+                          background: 'var(--color-bg-card)',
                           color: 'var(--color-text)'
                         }}
                         value={(formData as any)[c.id]}
@@ -536,7 +748,7 @@ const AdminStaffUpdate = () => {
                             height: '32px',
                             fontSize: '12px',
                             padding: '0 8px',
-                            background: 'white',
+                            background: 'var(--color-bg-card)',
                             color: 'var(--color-text)',
                             textAlign: 'left',
                             fontWeight: 'normal',
@@ -553,24 +765,25 @@ const AdminStaffUpdate = () => {
             </div>
 
             {/* ACTIONS ROW */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button 
                 type="submit" 
                 className="btn btn-primary" 
                 disabled={loading} 
-                style={{ flex: 1, justifyContent: 'center', height: '42px', fontSize: '14px', fontWeight: 600, letterSpacing: '0.025em' }}
+                style={{ flex: 1, minWidth: '160px', justifyContent: 'center', height: '42px', fontSize: '14px', fontWeight: 600, letterSpacing: '0.025em' }}
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                 <span style={{ marginLeft: '8px' }}>Simpan Perubahan</span>
               </button>
-              
+
+              {/* Tombol Reset */}
               <button 
                 type="button"
                 onClick={handleReset} 
                 className="btn btn-outline" 
                 style={{ width: '42px', padding: 0, color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2', justifyContent: 'center', height: '42px' }}
-                disabled={loading}
-                title="Reset Periode Ini"
+                disabled={loading || initLoading}
+                title="Reset Semua Data Periode Ini"
               >
                 <RotateCcw size={16} />
               </button>
@@ -587,13 +800,13 @@ const AdminStaffUpdate = () => {
           
           <div style={{ display: 'grid', gap: '8px' }}>
             {recentActivity.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', background: 'white', borderRadius: '12px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', fontSize: '13px' }}>
+              <div style={{ padding: '20px', textAlign: 'center', background: 'var(--color-bg-card)', borderRadius: '12px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', fontSize: '13px' }}>
                 Belum ada aktivitas update tercatat.
               </div>
             ) : (
               recentActivity.map((activity, idx) => (
                 <div key={idx} style={{ 
-                  background: 'white', 
+                  background: 'var(--color-bg-card)', 
                   padding: '12px 16px', 
                   borderRadius: '10px', 
                   border: '1px solid var(--color-border)',
@@ -625,6 +838,67 @@ const AdminStaffUpdate = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {editProfileModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--color-bg-card)', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '400px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px', fontSize: '18px' }}>Edit Profil Staf</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
+              Perubahan ini akan mengubah nama dan cabang staf untuk <strong>semua histori bulan sebelumnya</strong>. Kode ID akan tetap sama.
+            </p>
+            <form onSubmit={handleEditProfileSubmit}>
+              <div className="form-group">
+                <label>Nama Staf</label>
+                <input 
+                  type="text" 
+                  className="btn btn-outline"
+                  style={{ width: '100%', height: '40px', background: 'var(--color-bg-card)', textAlign: 'left', padding: '0 12px', fontWeight: 'normal' }}
+                  value={editProfileData.name} 
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Cabang</label>
+                <input 
+                  type="text" 
+                  className="btn btn-outline"
+                  style={{ width: '100%', height: '40px', background: 'var(--color-bg-card)', textAlign: 'left', padding: '0 12px', fontWeight: 'normal' }}
+                  value={editProfileData.branch} 
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, branch: e.target.value }))}
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setEditProfileModalOpen(false)}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={editProfileLoading}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  {editProfileLoading ? 'Menyimpan...' : 'Simpan Profil'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @media (max-width: 768px) {

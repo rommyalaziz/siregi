@@ -63,18 +63,28 @@ SELECT
     ELSE 0 
   END as p_sg,
   
-  -- 6. PPI Not Entry (Max 10)
+  -- 6. PPI Not Entry / Minggon (Max 10)
   CASE 
-    WHEN ppi_not_entry = 0 THEN 10 
-    WHEN ppi_not_entry = 1 THEN 8
-    WHEN ppi_not_entry BETWEEN 2 AND 3 THEN 7 
-    WHEN ppi_not_entry BETWEEN 4 AND 5 THEN 7
-    WHEN ppi_not_entry BETWEEN 6 AND 7 THEN 5 
-    WHEN ppi_not_entry BETWEEN 8 AND 10 THEN 5
-    WHEN ppi_not_entry BETWEEN 11 AND 13 THEN 3 
-    WHEN ppi_not_entry BETWEEN 14 AND 16 THEN 2
-    WHEN ppi_not_entry BETWEEN 17 AND 20 THEN 1 
-    ELSE 0 
+    -- Aturan baru per Juni 2026: Minggon (1 = 10 pts, 0 = 0 pts)
+    WHEN (tahun > 2026) OR (tahun = 2026 AND periode IN ('Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember')) THEN
+      CASE 
+        WHEN ppi_not_entry > 0 THEN 10
+        ELSE 0
+      END
+    -- Aturan lama sebelum Juni 2026: PPI Not Entry (makin besar nilai, makin kecil poin)
+    ELSE
+      CASE 
+        WHEN ppi_not_entry = 0 THEN 10 
+        WHEN ppi_not_entry = 1 THEN 8
+        WHEN ppi_not_entry BETWEEN 2 AND 3 THEN 7 
+        WHEN ppi_not_entry BETWEEN 4 AND 5 THEN 7
+        WHEN ppi_not_entry BETWEEN 6 AND 7 THEN 5 
+        WHEN ppi_not_entry BETWEEN 8 AND 10 THEN 5
+        WHEN ppi_not_entry BETWEEN 11 AND 13 THEN 3 
+        WHEN ppi_not_entry BETWEEN 14 AND 16 THEN 2
+        WHEN ppi_not_entry BETWEEN 17 AND 20 THEN 1 
+        ELSE 0 
+      END
   END as p_ppi,
   
   -- 7. Validasi (Max 10)

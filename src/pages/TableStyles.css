@@ -33,8 +33,8 @@
 .search-box {
   display: flex;
   align-items: center;
-  background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background-color: var(--color-bg-main);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 0 10px;
   height: 34px;
@@ -44,8 +44,8 @@
 }
 
 .search-box:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(104, 178, 160, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .search-box input {
@@ -97,7 +97,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #f9fafb;
+  background-color: var(--color-bg-main);
   font-weight: 700;
   font-size: 9px;
   text-transform: uppercase;
@@ -136,7 +136,7 @@
 }
 
 .data-table tbody tr:hover {
-  background-color: #F9FAFB;
+  background-color: var(--color-bg-main);
 }
 
 .data-table tbody tr:last-child td {
@@ -144,7 +144,7 @@
 }
 
 .mono {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 10.5px;
   color: var(--color-text-muted);
 }
@@ -183,12 +183,12 @@
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
-  background-color: #f3f4f650;
+  background-color: rgba(241, 245, 249, 0.5);
 }
 
 .icon-btn:hover {
   background-color: var(--color-bg-main);
-  color: var(--color-secondary);
+  color: var(--color-primary);
 }
 
 .drawer-content {
@@ -230,9 +230,9 @@
   flex-direction: column;
   gap: 2px;
   padding: 8px;
-  background-color: #F9FAFB;
+  background-color: var(--color-bg-main);
   border-radius: var(--radius-sm);
-  border: 1px solid #F3F4F6;
+  border: 1px solid var(--color-border);
 }
 
 .cum-item .label {
@@ -255,20 +255,20 @@
 }
 
 .month-select {
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 0 10px;
   height: 34px;
   font-size: 13px;
   outline: none;
-  background-color: white;
+  background-color: var(--color-bg-main);
   color: var(--color-text-main);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
 }
 
 .month-select:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 /* Mobile Responsive Table to Card List */
@@ -340,7 +340,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--color-bg-input);
     text-align: right;
     font-size: 13px;
   }
