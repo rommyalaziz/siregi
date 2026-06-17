@@ -650,7 +650,7 @@
   body {
     background: white !important;
   }
-  .sidebar, .top-nav, .header { display: none !important; }
+  .sidebar, .top-nav, .header, .main-header, .bottom-nav { display: none !important; }
   
   /* Hide Kunjungan page elements */
   .kunjungan-header, .kunjungan-stats-grid, .kunjungan-filter-bar, .kunjungan-table-card { 
@@ -658,7 +658,7 @@
   }
   
   /* Reset containers */
-  .main-content, .kunjungan-container, #root {
+  .main-layout, .main-content, .content-area, .kunjungan-container, #root {
     padding: 0 !important;
     margin: 0 !important;
     background: white !important;
