@@ -13,18 +13,22 @@ interface KunjunganCabang {
   nama_cabang: string;
   nama_msa: string;
   tanggal_kunjungan: string;
-  c_backup_owncloud: boolean;
   c_folder_d_rapi: boolean;
   c_dok_surat_ceklist: boolean;
+  n_kurang_surat_ceklist: number;
   c_dok_data_anggota: boolean;
+  n_kurang_data_anggota: number;
   c_dok_anggota_keluar: boolean;
+  n_kurang_anggota_keluar: number;
   c_dok_dana_resiko: boolean;
+  n_kurang_dana_resiko: number;
   c_dok_sihara: boolean;
+  n_kurang_sihara: number;
   c_dok_laporan_bulanan: boolean;
+  n_kurang_laporan_bulanan: number;
   c_dok_lwk: boolean;
-  c_sinkron_mdismo: boolean;
+  n_kurang_lwk: number;
   c_pending_mdis: boolean;
-  c_email_arsip: boolean;
   c_briefing_buku_tamu: boolean;
   c_kpa_akad: boolean;
   c_stok_formulir: boolean;
@@ -45,18 +49,22 @@ const defaultFormState: Omit<KunjunganCabang, 'id'> = {
   nama_cabang: '',
   nama_msa: '',
   tanggal_kunjungan: '',
-  c_backup_owncloud: false,
   c_folder_d_rapi: false,
   c_dok_surat_ceklist: false,
+  n_kurang_surat_ceklist: 0,
   c_dok_data_anggota: false,
+  n_kurang_data_anggota: 0,
   c_dok_anggota_keluar: false,
+  n_kurang_anggota_keluar: 0,
   c_dok_dana_resiko: false,
+  n_kurang_dana_resiko: 0,
   c_dok_sihara: false,
+  n_kurang_sihara: 0,
   c_dok_laporan_bulanan: false,
+  n_kurang_laporan_bulanan: 0,
   c_dok_lwk: false,
-  c_sinkron_mdismo: false,
+  n_kurang_lwk: 0,
   c_pending_mdis: false,
-  c_email_arsip: false,
   c_briefing_buku_tamu: false,
   c_kpa_akad: false,
   c_stok_formulir: false,
@@ -242,7 +250,6 @@ const Kunjungan = () => {
 
   const calculateScore = (item: KunjunganCabang | Omit<KunjunganCabang, 'id'>) => {
     let score = 0;
-    if (item.c_backup_owncloud) score++;
     if (item.c_folder_d_rapi) score++;
     if (item.c_dok_surat_ceklist) score++;
     if (item.c_dok_data_anggota) score++;
@@ -251,9 +258,7 @@ const Kunjungan = () => {
     if (item.c_dok_sihara) score++;
     if (item.c_dok_laporan_bulanan) score++;
     if (item.c_dok_lwk) score++;
-    if (item.c_sinkron_mdismo) score++;
     if (item.c_pending_mdis) score++;
-    if (item.c_email_arsip) score++;
     if (item.c_briefing_buku_tamu) score++;
     if (item.c_kpa_akad) score++;
     if (item.c_stok_formulir) score++;
@@ -311,6 +316,40 @@ const Kunjungan = () => {
     );
   };
 
+  const handleKurangChange = (field: keyof KunjunganCabang, value: string) => {
+    const num = parseInt(value, 10);
+    setFormData(prev => ({ ...prev, [field]: isNaN(num) ? 0 : num }));
+  };
+
+  const renderDocChecklistItem = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang) => {
+    const isChecked = Boolean(formData[boolField as keyof typeof formData]);
+    const checkedClass = isChecked ? 'checked' : '';
+    return (
+      <div className="kj-doc-checklist-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <div className={`kj-checklist-item ${checkedClass}`} style={{ flex: 1, marginBottom: 0 }} onClick={() => handleCheckboxChange(boolField)}>
+          <div className="kj-checklist-checkbox">
+            {isChecked && <CheckCircle2 size={12} color="#fff" />}
+          </div>
+          <div className="kj-checklist-label">{label}</div>
+        </div>
+        {!isChecked && (
+          <div className="kj-checklist-input-kurang" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <input 
+              type="number" 
+              min="0" 
+              placeholder="Jml" 
+              value={(formData[numField as keyof typeof formData] as number) || ''}
+              onChange={(e) => handleKurangChange(numField, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '40px', padding: '2px 4px', fontSize: '11px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+            />
+            <span style={{ fontSize: '10px', color: '#64748b' }}>krg</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderDetailChecklist = (label: string, field: keyof KunjunganCabang, isWarningLogic = false) => {
     if (!editingItem) return null;
     const isChecked = Boolean(editingItem[field as keyof typeof editingItem]);
@@ -325,6 +364,19 @@ const Kunjungan = () => {
       <div className={`kj-detail-checklist-row ${statusClass}`}>
         {statusClass === 'yes' ? <CheckCircle2 size={14} /> : (statusClass === 'warn' ? <AlertTriangle size={14} /> : <X size={14} />)}
         <span>{label}</span>
+      </div>
+    );
+  };
+
+  const renderDetailDocChecklist = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang) => {
+    if (!editingItem) return null;
+    const isChecked = Boolean(editingItem[boolField as keyof typeof editingItem]);
+    const kurangCount = Number(editingItem[numField as keyof typeof editingItem]) || 0;
+    
+    return (
+      <div className={`kj-detail-checklist-row ${isChecked ? 'yes' : 'no'}`}>
+        {isChecked ? <CheckCircle2 size={14} /> : <X size={14} />}
+        <span>{label} {(!isChecked && kurangCount > 0) ? `(Kurang: ${kurangCount} file)` : ''}</span>
       </div>
     );
   };
@@ -478,20 +530,17 @@ const Kunjungan = () => {
               <tbody>
                 {filteredData.map((item, index) => {
                   const score = calculateScore(item);
-                  const total = 20;
-                  const pct = Math.round((score/total) * 100);
+                  const total = 17;
+                  const pct = Math.round((score / total) * 100);
                   const scoreClass = pct >= 80 ? 'good' : (pct >= 50 ? 'warn' : 'bad');
                   
                   return (
                     <tr key={item.id}>
-                      <td style={{ textAlign: 'center' }} data-label="No">
-                        <span className="kj-row-num">{index + 1}</span>
-                      </td>
-                      <td data-label="Tanggal">
-                        <strong>{formatDate(item.tanggal_kunjungan)}</strong>
-                      </td>
+                      <td data-label="No">{index + 1}</td>
                       <td data-label="Cabang">
                         {item.nama_cabang}
+                        <br/>
+                        <span className="kj-date-sub">{formatDate(item.tanggal_kunjungan)}</span>
                       </td>
                       <td data-label="Nama MSA">
                         {item.nama_msa}
@@ -501,7 +550,7 @@ const Kunjungan = () => {
                           <div className="kj-score-bar">
                             <div className={`kj-score-fill ${scoreClass}`} style={{ width: `${pct}%` }}></div>
                           </div>
-                          <span className="kj-score-label">{score}/{total} ({pct}%)</span>
+                          <span className="kj-score-label">{score}/17 ({pct}%)</span>
                         </div>
                       </td>
                       <td data-label="Status">
@@ -596,30 +645,27 @@ const Kunjungan = () => {
                   {/* Kategori 1 */}
                   <div className="kj-checklist-grid">
                     <div className="kj-checklist-sub-title">A. Backup & Arsip Digital</div>
-                    {renderChecklistItem('Backup data terakhir sudah masuk ke owncloud?', 'c_backup_owncloud')}
                     {renderChecklistItem('Struktur folder D:\\ sudah rapi sesuai ketentuan?', 'c_folder_d_rapi')}
                     
                     <div className="kj-checklist-sub-title" style={{ marginTop: '8px', fontSize: '10px' }}>Dokumen Harian Sudah Discan:</div>
-                    {renderChecklistItem('Data Surat Ceklist', 'c_dok_surat_ceklist')}
-                    {renderChecklistItem('Data Anggota', 'c_dok_data_anggota')}
-                    {renderChecklistItem('Anggota Keluar', 'c_dok_anggota_keluar')}
-                    {renderChecklistItem('Dana Resiko', 'c_dok_dana_resiko')}
-                    {renderChecklistItem('SIHARA', 'c_dok_sihara')}
-                    {renderChecklistItem('Laporan Bulanan', 'c_dok_laporan_bulanan')}
-                    {renderChecklistItem('Data LWK', 'c_dok_lwk')}
+                    {renderDocChecklistItem('Data Surat Ceklist', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
+                    {renderDocChecklistItem('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
+                    {renderDocChecklistItem('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
+                    {renderDocChecklistItem('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
+                    {renderDocChecklistItem('SIHARA', 'c_dok_sihara', 'n_kurang_sihara')}
+                    {renderDocChecklistItem('Laporan Bulanan', 'c_dok_laporan_bulanan', 'n_kurang_laporan_bulanan')}
+                    {renderDocChecklistItem('Data LWK', 'c_dok_lwk', 'n_kurang_lwk')}
                   </div>
 
                   {/* Kategori 2, 3, 4, 5 */}
                   <div className="kj-checklist-grid">
                     <div className="kj-checklist-sub-title">B. MDISMO & Sistem</div>
-                    {renderChecklistItem('Sinkron MDISMO sudah dilakukan hari ini?', 'c_sinkron_mdismo')}
-                    {renderChecklistItem('Pendingan data MDIS ijo dicek (tidak ada pending)?', 'c_pending_mdis')}
-                    {renderChecklistItem('Email sudah diarsipkan ke folder digital?', 'c_email_arsip')}
+                    {renderChecklistItem('Inputan Pending mdis', 'c_pending_mdis')}
 
                     <div className="kj-checklist-sub-title" style={{marginTop: '12px'}}>C. Operasional Harian</div>
-                    {renderChecklistItem('Briefing pagi jalan & buku tamu terisi?', 'c_briefing_buku_tamu')}
-                    {renderChecklistItem('KPA & Akad disiapkan sebelum lapang?', 'c_kpa_akad')}
-                    {renderChecklistItem('Stok formulir operasional cukup?', 'c_stok_formulir')}
+                    {renderChecklistItem('Laporan harian briefing', 'c_briefing_buku_tamu')}
+                    {renderChecklistItem('Print KPA', 'c_kpa_akad')}
+                    {renderChecklistItem('Stok Formulir', 'c_stok_formulir')}
 
                     <div className="kj-checklist-sub-title" style={{marginTop: '12px'}}>D. Kontrol & Kepatuhan</div>
                     {renderChecklistItem('Sampling by phone (pencairan/penarikan) dilakukan?', 'c_sampling_phone')}
@@ -740,36 +786,33 @@ const Kunjungan = () => {
                 <div className="kj-detail-section" style={{ marginBottom: '16px' }}>
                   <div className="kj-detail-section-title">Hasil Evaluasi Checklist</div>
                   <div className="kj-checklist-score-bar" style={{ marginBottom: '10px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Skor: {calculateScore(editingItem)} / 20</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Skor: {calculateScore(editingItem)} / 17</span>
                     <div className="bar-track">
-                      <div className={`bar-fill ${(calculateScore(editingItem)/20) >= 0.8 ? 'good' : ((calculateScore(editingItem)/20) >= 0.5 ? 'warn' : 'bad')}`} style={{ width: `${(calculateScore(editingItem)/20)*100}%` }}></div>
+                      <div className={`bar-fill ${(calculateScore(editingItem)/17) >= 0.8 ? 'good' : ((calculateScore(editingItem)/17) >= 0.5 ? 'warn' : 'bad')}`} style={{ width: `${(calculateScore(editingItem)/17)*100}%` }}></div>
                     </div>
                   </div>
 
                   <div className="kj-detail-row" style={{ alignItems: 'flex-start' }}>
                     <div>
                       <strong style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>A. Backup & Arsip Digital</strong>
-                      {renderDetailChecklist('Backup ke owncloud', 'c_backup_owncloud')}
                       {renderDetailChecklist('Folder D:\\ rapi', 'c_folder_d_rapi')}
                       <span style={{ fontSize: '10px', color: '#666', marginTop: '6px', display: 'block' }}>Dokumen Harian Discan:</span>
-                      {renderDetailChecklist('Data Surat Ceklist', 'c_dok_surat_ceklist')}
-                      {renderDetailChecklist('Data Anggota', 'c_dok_data_anggota')}
-                      {renderDetailChecklist('Anggota Keluar', 'c_dok_anggota_keluar')}
-                      {renderDetailChecklist('Dana Resiko', 'c_dok_dana_resiko')}
-                      {renderDetailChecklist('SIHARA', 'c_dok_sihara')}
-                      {renderDetailChecklist('Laporan Bulanan', 'c_dok_laporan_bulanan')}
-                      {renderDetailChecklist('Data LWK', 'c_dok_lwk')}
+                      {renderDetailDocChecklist('Data Surat Ceklist', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
+                      {renderDetailDocChecklist('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
+                      {renderDetailDocChecklist('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
+                      {renderDetailDocChecklist('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
+                      {renderDetailDocChecklist('SIHARA', 'c_dok_sihara', 'n_kurang_sihara')}
+                      {renderDetailDocChecklist('Laporan Bulanan', 'c_dok_laporan_bulanan', 'n_kurang_laporan_bulanan')}
+                      {renderDetailDocChecklist('Data LWK', 'c_dok_lwk', 'n_kurang_lwk')}
                       
                       <strong style={{ fontSize: '11px', display: 'block', margin: '12px 0 4px' }}>B. MDISMO & Sistem</strong>
-                      {renderDetailChecklist('Sinkron MDISMO', 'c_sinkron_mdismo')}
-                      {renderDetailChecklist('Pendingan MDIS dicek', 'c_pending_mdis')}
-                      {renderDetailChecklist('Arsip email digital', 'c_email_arsip')}
+                      {renderDetailChecklist('Inputan Pending mdis', 'c_pending_mdis')}
                     </div>
                     <div>
                       <strong style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>C. Operasional Harian</strong>
-                      {renderDetailChecklist('Briefing & Buku Tamu', 'c_briefing_buku_tamu')}
-                      {renderDetailChecklist('KPA & Akad Siap', 'c_kpa_akad')}
-                      {renderDetailChecklist('Stok Formulir Aman', 'c_stok_formulir')}
+                      {renderDetailChecklist('Laporan harian briefing', 'c_briefing_buku_tamu')}
+                      {renderDetailChecklist('Print KPA', 'c_kpa_akad')}
+                      {renderDetailChecklist('Stok Formulir', 'c_stok_formulir')}
 
                       <strong style={{ fontSize: '11px', display: 'block', margin: '12px 0 4px' }}>D. Kontrol & Kepatuhan</strong>
                       {renderDetailChecklist('Sampling by Phone', 'c_sampling_phone')}
