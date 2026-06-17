@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import './Sidebar.css';
 
@@ -110,6 +110,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <NavLink to="/reports" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <FileBarChart size={16} />
           <span>Laporan Detail</span>
+        </NavLink>
+        <NavLink to="/arsip-digital" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <FolderArchive size={16} />
+          <span>Arsip Digital</span>
         </NavLink>
         <NavLink to="/mdisgo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <GraduationCap size={16} />

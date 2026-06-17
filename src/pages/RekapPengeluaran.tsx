@@ -9,6 +9,7 @@ import './RekapPengeluaran.css';
 interface Cabang {
   id: string;
   nama_cabang: string;
+  kode_cabang: string;
 }
 
 interface UserData {
@@ -193,8 +194,8 @@ const RekapPengeluaran = () => {
       
       const targetUser = msaUser || anyUser;
       
-      // Auto generate kode cabang simple (misal 3 huruf pertama)
-      const code = selectedCabang.nama_cabang.substring(0, 3).toUpperCase();
+      // Auto generate kode cabang dari database
+      const code = selectedCabang.kode_cabang || '';
 
       const newFormData = {
         ...formData,

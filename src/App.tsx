@@ -12,6 +12,8 @@ import MdisgoMonitoring from './pages/MdisgoMonitoring';
 import Kunjungan from './pages/Kunjungan';
 import DataUser from './pages/DataUser';
 import RekapPengeluaran from './pages/RekapPengeluaran';
+import ArsipDigital from './pages/ArsipDigital';
+import ArsipDigitalForm from './pages/ArsipDigitalForm';
 import { useIdleTimer } from './hooks/useIdleTimer';
 
 // Protected Route Component
@@ -58,6 +60,11 @@ function AppContent() {
         <Route path="/admin/update" element={<AdminStaffUpdate />} />
         <Route path="/admin/data-user" element={<DataUser />} />
         <Route path="/admin/rekap-pengeluaran" element={<AdminRoute><RekapPengeluaran /></AdminRoute>} />
+        
+        {/* Arsip Digital Module */}
+        <Route path="/arsip-digital" element={<ArsipDigital />} />
+        <Route path="/arsip-digital/tambah" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
+        <Route path="/arsip-digital/edit/:id" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
       </Route>
 
       {/* Catch all redirect to login */}
