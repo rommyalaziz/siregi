@@ -650,7 +650,7 @@
   body {
     background: white !important;
   }
-  .sidebar, .top-nav, .header, .main-header, .bottom-nav { display: none !important; }
+  .sidebar, .top-nav, .header, .main-header, .bottom-nav, .mobile-only { display: none !important; }
   
   /* Hide Kunjungan page elements */
   .kunjungan-header, .kunjungan-stats-grid, .kunjungan-filter-bar, .kunjungan-table-card { 

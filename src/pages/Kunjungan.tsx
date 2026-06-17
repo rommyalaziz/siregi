@@ -849,7 +849,7 @@ const Kunjungan = () => {
                 {/* Print Signatures Placeholder */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', padding: '0 20px' }} className="print-signatures">
                   <div style={{ textAlign: 'center', width: '200px' }}>
-                    <p style={{ marginBottom: '50px', fontSize: '12px' }}>Dibuat Oleh,<br/>MSA / FSA</p>
+                    <p style={{ marginBottom: '50px', fontSize: '12px' }}>Mengetahui,<br/>MSA / FSA</p>
                     <p style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '12px', width: '120px', margin: '0 auto' }}>{editingItem.nama_msa}</p>
                   </div>
                 </div>
