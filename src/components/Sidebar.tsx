@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import './Sidebar.css';
 
