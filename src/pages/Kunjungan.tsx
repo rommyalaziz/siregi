@@ -238,15 +238,125 @@ const Kunjungan = () => {
   };
 
   const handlePrint = () => {
+    document.body.classList.add('print-mode-rekap');
     window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-mode-rekap');
+    }, 100);
+  };
+
+  const printDetailContent = () => {
+    const printArea = document.querySelector('.kj-print-area');
+    if (!printArea) return;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      alert('Popup diblokir. Izinkan popup untuk mencetak laporan.');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Cetak Laporan Kunjungan</title>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            padding: 18mm 15mm 12mm 15mm; 
+            color: #1E293B; 
+            font-size: 11px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          /* margin: 0 removes browser header/footer (date, URL, page title) */
+          @page { size: A4; margin: 0; }
+          @media print { body { padding: 20mm 15mm 12mm 15mm; } }
+
+          .kj-detail-section { margin-bottom: 10px; }
+          .kj-detail-section-title {
+            font-size: 9px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: #6366F1;
+            padding-bottom: 3px; border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 5px;
+          }
+          .kj-detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+          .kj-detail-field { display: flex; flex-direction: column; gap: 1px; }
+          .kj-detail-field span:first-child {
+            font-size: 8px; font-weight: 600; color: #64748B;
+            text-transform: uppercase; letter-spacing: 0.4px;
+          }
+          .kj-detail-field span:last-child { font-size: 11px; color: #1E293B; font-weight: 500; }
+          .kj-status { 
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 1px 6px; border-radius: 9999px; font-size: 9px; font-weight: 600; 
+          }
+          .kj-status.selesai { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+          .kj-status.draft { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+          .kj-status.perlu-tindak { background: rgba(245,158,11,0.1); color: #92400E; border: 1px solid #FDE68A; }
+
+          .kj-checklist-score-bar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 10px; background: #F8F9FB; border-radius: 4px;
+            border: 1px solid #E2E8F0; margin-bottom: 6px;
+          }
+          .bar-track { flex: 1; height: 5px; background: #E2E8F0; border-radius: 99px; overflow: hidden; }
+          .bar-fill { height: 100%; border-radius: 99px; }
+          .bar-fill.good { background: #10B981; }
+          .bar-fill.warn { background: #F59E0B; }
+          .bar-fill.bad { background: #EF4444; }
+
+          .kj-detail-checklist-row {
+            display: flex; align-items: center; gap: 5px;
+            padding: 2px 6px; border-radius: 3px; font-size: 10px;
+          }
+          .kj-detail-checklist-row.yes { color: #065F46; }
+          .kj-detail-checklist-row.no { color: #64748B; }
+          .kj-detail-checklist-row.warn { color: #92400E; }
+          .kj-detail-checklist-row svg { flex-shrink: 0; width: 12px; height: 12px; }
+
+          .kj-form-group { display: flex; flex-direction: column; gap: 3px; margin-bottom: 5px; }
+          .kj-form-group label { font-size: 9px; font-weight: 600; color: #64748B; }
+          .kj-detail-text {
+            font-size: 10px; color: #1E293B; background: #F8F9FB;
+            padding: 5px 8px; border-radius: 4px;
+            border: 1px solid #E2E8F0; line-height: 1.4; min-height: 20px;
+          }
+          .print-signatures {
+            display: flex; justify-content: flex-end; margin-top: 24px; padding: 0 10px;
+            page-break-inside: avoid;
+          }
+        </style>
+      </head>
+      <body>
+        ${printArea.innerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+              setTimeout(function() { window.close(); }, 2000);
+            }, 300);
+          };
+        <\/script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   const handlePrintItem = (item: KunjunganCabang) => {
     setEditingItem(item);
     setShowDetailModal(true);
+    // Wait for React to render the modal, then print
     setTimeout(() => {
-      window.print();
-    }, 300);
+      printDetailContent();
+    }, 400);
   };
 
   const calculateScore = (item: KunjunganCabang | Omit<KunjunganCabang, 'id'>) => {
@@ -383,7 +493,7 @@ const Kunjungan = () => {
   };
 
   return (
-    <div className="kunjungan-container kj-print-hide">
+    <div className="kunjungan-container">
       <div className="kunjungan-header">
         <div className="kunjungan-header-titles">
           <h1>Laporan Kunjungan</h1>
@@ -649,7 +759,7 @@ const Kunjungan = () => {
                     {renderChecklistItem('Struktur folder D:\\ sudah rapi sesuai ketentuan?', 'c_folder_d_rapi')}
                     
                     <div className="kj-checklist-sub-title" style={{ marginTop: '8px', fontSize: '10px' }}>Dokumen Harian Sudah Discan:</div>
-                    {renderDocChecklistItem('Data Surat Ceklist', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
+                    {renderDocChecklistItem('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
                     {renderDocChecklistItem('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
                     {renderDocChecklistItem('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
                     {renderDocChecklistItem('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
@@ -756,12 +866,12 @@ const Kunjungan = () => {
               
               {/* Layout Print Khusus */}
               <div className="kj-print-area">
-                <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0' }}>FORM EVALUASI KUNJUNGAN CABANG</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px' }}>Sistem Informasi Regional (SIREGI)</p>
+                <div style={{ textAlign: 'center', marginBottom: '12px', borderBottom: '2px solid #000', paddingBottom: '6px' }}>
+                  <h2 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0' }}>FORM EVALUASI KUNJUNGAN CABANG</h2>
+                  <p style={{ margin: '2px 0 0', fontSize: '10px' }}>Sistem Informasi Regional (SIREGI)</p>
                 </div>
 
-                <div className="kj-detail-section" style={{ marginBottom: '16px' }}>
+                <div className="kj-detail-section" style={{ marginBottom: '10px' }}>
                   <div className="kj-detail-row">
                     <div className="kj-detail-field">
                       <span>Cabang</span>
@@ -784,10 +894,10 @@ const Kunjungan = () => {
                   </div>
                 </div>
 
-                <div className="kj-detail-section" style={{ marginBottom: '16px' }}>
+                <div className="kj-detail-section" style={{ marginBottom: '10px' }}>
                   <div className="kj-detail-section-title">Hasil Evaluasi Checklist</div>
-                  <div className="kj-checklist-score-bar" style={{ marginBottom: '10px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Skor: {calculateScore(editingItem)} / 17</span>
+                  <div className="kj-checklist-score-bar" style={{ marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold' }}>Skor: {calculateScore(editingItem)} / 17</span>
                     <div className="bar-track">
                       <div className={`bar-fill ${(calculateScore(editingItem)/17) >= 0.8 ? 'good' : ((calculateScore(editingItem)/17) >= 0.5 ? 'warn' : 'bad')}`} style={{ width: `${(calculateScore(editingItem)/17)*100}%` }}></div>
                     </div>
@@ -795,10 +905,10 @@ const Kunjungan = () => {
 
                   <div className="kj-detail-row" style={{ alignItems: 'flex-start' }}>
                     <div>
-                      <strong style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>A. Backup & Arsip Digital</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', marginBottom: '2px' }}>A. Backup & Arsip Digital</strong>
                       {renderDetailChecklist('Folder D:\\ rapi', 'c_folder_d_rapi')}
-                      <span style={{ fontSize: '10px', color: '#666', marginTop: '6px', display: 'block' }}>Dokumen Harian Discan:</span>
-                      {renderDetailDocChecklist('Data Surat Ceklist', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
+                      <span style={{ fontSize: '8px', color: '#666', marginTop: '4px', display: 'block' }}>Dokumen Harian Discan:</span>
+                      {renderDetailDocChecklist('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
                       {renderDetailDocChecklist('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
                       {renderDetailDocChecklist('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
                       {renderDetailDocChecklist('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
@@ -806,20 +916,20 @@ const Kunjungan = () => {
                       {renderDetailDocChecklist('Laporan Bulanan', 'c_dok_laporan_bulanan', 'n_kurang_laporan_bulanan')}
                       {renderDetailDocChecklist('Data LWK', 'c_dok_lwk', 'n_kurang_lwk')}
                       
-                      <strong style={{ fontSize: '11px', display: 'block', margin: '12px 0 4px' }}>B. MDISMO & Sistem</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>B. MDISMO & Sistem</strong>
                       {renderDetailChecklist('Inputan Pending mdis', 'c_pending_mdis')}
                     </div>
                     <div>
-                      <strong style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>C. Operasional Harian</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', marginBottom: '2px' }}>C. Operasional Harian</strong>
                       {renderDetailChecklist('Laporan harian briefing', 'c_briefing_buku_tamu')}
                       {renderDetailChecklist('Print KPA', 'c_kpa_akad')}
                       {renderDetailChecklist('Stok Formulir', 'c_stok_formulir')}
 
-                      <strong style={{ fontSize: '11px', display: 'block', margin: '12px 0 4px' }}>D. Kontrol & Kepatuhan</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>D. Kontrol & Kepatuhan</strong>
                       {renderDetailChecklist('Sampling by Phone', 'c_sampling_phone')}
                       {renderDetailChecklist('Ada Penyimpangan', 'c_penyimpangan_ada', true)}
 
-                      <strong style={{ fontSize: '11px', display: 'block', margin: '12px 0 4px' }}>E. Aset & IT</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>E. Aset & IT</strong>
                       {renderDetailChecklist('Maintenance Komputer', 'c_maintenance_komputer')}
                       {renderDetailChecklist('Stok Toner Aman', 'c_stok_toner')}
                       {renderDetailChecklist('Cek Fixed Asset', 'c_fixed_asset')}
@@ -848,10 +958,10 @@ const Kunjungan = () => {
                 </div>
                 
                 {/* Print Signatures Placeholder */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', padding: '0 20px' }} className="print-signatures">
-                  <div style={{ textAlign: 'center', width: '200px' }}>
-                    <p style={{ marginBottom: '50px', fontSize: '12px' }}>Mengetahui,<br/>MSA / FSA</p>
-                    <p style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '12px', width: '120px', margin: '0 auto' }}>{editingItem.nama_msa}</p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', padding: '0 10px' }} className="print-signatures">
+                  <div style={{ textAlign: 'center', width: '180px' }}>
+                    <p style={{ marginBottom: '40px', fontSize: '10px' }}>Mengetahui,<br/>MSA / FSA</p>
+                    <p style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '10px', width: '120px', margin: '0 auto' }}>{editingItem.nama_msa}</p>
                   </div>
                 </div>
               </div>
@@ -859,7 +969,7 @@ const Kunjungan = () => {
             
             <div className="kj-modal-footer kj-print-hide">
               <button className="btn btn-outline" onClick={closeModal}>Tutup</button>
-              <button className="btn btn-primary" onClick={() => window.print()}>
+              <button className="btn btn-primary" onClick={printDetailContent}>
                 <Printer size={16} /> Cetak Laporan
               </button>
             </div>

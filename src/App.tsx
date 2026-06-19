@@ -14,7 +14,9 @@ import DataUser from './pages/DataUser';
 import RekapPengeluaran from './pages/RekapPengeluaran';
 import ArsipDigital from './pages/ArsipDigital';
 import ArsipDigitalForm from './pages/ArsipDigitalForm';
+import LogAktivitas from './pages/LogAktivitas';
 import { useIdleTimer } from './hooks/useIdleTimer';
+import { useActivityTracker } from './hooks/useActivityTracker';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -40,9 +42,25 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Super Admin Only Route Component (for write actions & restricted views)
+const SuperAdminRoute = ({ children }: { children: ReactNode }) => {
+  const session = sessionStorage.getItem('msa_session');
+  const user = session ? JSON.parse(session) : null;
+  const role = user?.role?.toLowerCase() || '';
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
+  
+  if (!isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 function AppContent() {
   // Global inactivity logout hook
   useIdleTimer();
+  // Activity tracking hook (heartbeat for online detection)
+  useActivityTracker();
 
   return (
     <Routes>
@@ -52,14 +70,15 @@ function AppContent() {
       
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/branches" element={<BranchProgress />} />
+        <Route path="/branches" element={<SuperAdminRoute><BranchProgress /></SuperAdminRoute>} />
         <Route path="/staff" element={<StaffProgress />} />
         <Route path="/reports" element={<DetailedReport />} />
         <Route path="/mdisgo" element={<MdisgoMonitoring />} />
-        <Route path="/kunjungan" element={<Kunjungan />} />
-        <Route path="/admin/update" element={<AdminStaffUpdate />} />
-        <Route path="/admin/data-user" element={<DataUser />} />
+        <Route path="/kunjungan" element={<SuperAdminRoute><Kunjungan /></SuperAdminRoute>} />
+        <Route path="/admin/update" element={<SuperAdminRoute><AdminStaffUpdate /></SuperAdminRoute>} />
+        <Route path="/admin/data-user" element={<AdminRoute><DataUser /></AdminRoute>} />
         <Route path="/admin/rekap-pengeluaran" element={<AdminRoute><RekapPengeluaran /></AdminRoute>} />
+        <Route path="/admin/log-aktivitas" element={<SuperAdminRoute><LogAktivitas /></SuperAdminRoute>} />
         
         {/* Arsip Digital Module */}
         <Route path="/arsip-digital" element={<ArsipDigital />} />

@@ -11,49 +11,14 @@ const KpiParameterModal: React.FC<KpiParameterModalProps> = ({ isOpen, onClose }
   if (!isOpen) return null;
 
   const categories = [
-    { name: 'Release Voucher', max: 10, points: [10, 8, 7, 6, 5, 4, 3, 2, 1, 0] },
-    { name: 'Unapprove Pengajuan', max: 10, points: [10, 7, 5, 3, 2, 1, 0, 0, 0, 0] },
-    { name: 'Recalculate Delinquency', max: 10, points: [10, 8, 7, 6, 4, 3, 1, 0, 0, 0] },
-    { name: 'Transfer Pencairan', max: 15, points: [15, 10, 5, 1, 0, 0, 0, 0, 0, 0] },
-    { name: 'Salah Generate', max: 10, points: [10, 6, 2, 1, 0, 0, 0, 0, 0, 0] },
-    { name: 'PPI Not Entry', max: 10, points: [10, 8, 7, 7, 5, 5, 3, 2, 1, 0] },
-    { name: 'Validasi', max: 10, points: [10, 8, 7, 6, 5, 4, 3, 2, 1, 0] },
-    { name: 'Tiket Perbaikan', max: 15, points: [15, 5, 2, 1, 0, 0, 0, 0, 0, 0] },
-    { name: 'Lain-lain', max: 10, points: [10, 7, 4, 2, 1, 0, 0, 0, 0, 0] },
+    { name: 'Release Voucher', deduction: 3 },
+    { name: 'Unapprove Pengajuan', deduction: 3 },
+    { name: 'Recalculate Delinquency', deduction: 3 },
+    { name: 'Transfer Pencairan', deduction: 10 },
+    { name: 'Salah Generate', deduction: 5 },
+    { name: 'Validasi', deduction: 3, note: 'Dihitung maksimal 1 kali kesalahan meskipun jumlahnya > 1.' },
+    { name: 'Tiket Perbaikan', deduction: 10 },
   ];
-
-  const headers = ['0', '1', '2-3', '4-5', '6-7', '8-10', '11-13', '14-16', '17-20', '>20'];
-
-  const getHeaderColor = (index: number) => {
-    const colors = [
-      '#22c55e', // 0
-      '#4ade80', // 1
-      '#a3e635', // 2-3
-      '#facc15', // 4-5
-      '#fbbf24', // 6-7
-      '#fb923c', // 8-10
-      '#f87171', // 11-13
-      'var(--color-danger)', // 14-16
-      '#dc2626', // 17-20
-      '#991b1b'  // >20
-    ];
-    return colors[index];
-  };
-
-  const getCellColor = (point: number, max: number, hIdx: number) => {
-    if (point === 0 && hIdx > 0) return '#FEF2F2';
-    if (point === max) return '#F0FDF4';
-    
-    // Use a lighter version of the header color if the point is > 0
-    const hColor = getHeaderColor(hIdx);
-    return hColor + '15'; // 15% opacity of the header color
-  };
-
-  const getTextColor = (point: number, max: number, hIdx: number) => {
-    if (point === 0 && hIdx > 0) return '#991B1B';
-    if (point === max) return '#166534';
-    return '#334155';
-  };
 
   return (
     <div className="kpi-modal-overlay" onClick={onClose}>
@@ -70,84 +35,69 @@ const KpiParameterModal: React.FC<KpiParameterModalProps> = ({ isOpen, onClose }
 
         <div className="kpi-modal-body">
           <div className="info-alert">
-            <p>Poin akhir dihitung berdasarkan akumulasi poin dari setiap kategori kesalahan. Total poin maksimal adalah <strong>100</strong>.</p>
+            <p><strong>Sistem Base 100:</strong> Nilai awal setiap staf adalah <strong>100</strong> (Tanpa kesalahan). Jika terjadi kesalahan, poin akan dikurangi sesuai dengan bobot masing-masing kategori di bawah ini.</p>
           </div>
 
           <div className="table-responsive">
-            <table className="parameter-table">
+            <table className="parameter-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th rowSpan={2} className="sticky-col">Deskripsi</th>
-                  <th rowSpan={2}>Poin Max</th>
-                  <th colSpan={10} className="center-text bg-alt">Jumlah Kesalahan / Poin yang Didapat</th>
-                </tr>
-                <tr>
-                  {headers.map((h, i) => (
-                    <th 
-                      key={h} 
-                      className="sub-header"
-                      style={{ 
-                        backgroundColor: getHeaderColor(i),
-                        color: 'white',
-                        border: 'none',
-                        fontSize: '11px',
-                        fontWeight: 800
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  <th style={{ textAlign: 'left', padding: '12px' }}>Kategori Kesalahan</th>
+                  <th className="center-text" style={{ padding: '12px' }}>Pengurangan per Kesalahan</th>
+                  <th style={{ textAlign: 'left', padding: '12px' }}>Keterangan Tambahan</th>
                 </tr>
               </thead>
               <tbody>
-                {categories.map((cat, idx) => {
-                  if (cat.name === 'Lain-lain') {
-                    return (
-                      <tr key={idx}>
-                        <td className="sticky-col fw-600">{cat.name}</td>
-                        <td className="center-text fw-700 text-primary">{cat.max}</td>
-                        <td colSpan={10} className="center-text text-muted" style={{ fontSize: '11px', fontStyle: 'italic', padding: '8px', color: 'var(--color-text-muted)' }}>
-                          Penyesuaian Poin Langsung (contoh: +5 untuk menambah poin, -5 untuk mengurangi poin)
-                        </td>
-                      </tr>
-                    );
-                  }
-                  return (
-                    <tr key={idx}>
-                      <td className="sticky-col fw-600">{cat.name}</td>
-                      <td className="center-text fw-700 text-primary">{cat.max}</td>
-                      {cat.points.map((p, pIdx) => (
-                        <td 
-                          key={pIdx} 
-                          className="center-text point-cell"
-                          style={{ 
-                            backgroundColor: getCellColor(p, cat.max, pIdx),
-                            color: getTextColor(p, cat.max, pIdx),
-                            borderBottom: `1px solid ${getHeaderColor(pIdx)}30`,
-                            fontWeight: p === cat.max ? 800 : 500
-                          }}
-                        >
-                          {p}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-                <tr className="total-row">
-                  <td className="sticky-col">TOTAL POIN</td>
-                  <td className="center-text">100</td>
-                  {/* Summary row if needed, but the user image shows 100, 100, 67, etc. */}
-                  {[100, 100, 67, 46, 33, 22, 17, 10, 6, 3, 0].slice(1).map((val, i) => (
-                    <td key={i} className="center-text fw-700">{val}</td>
-                  ))}
+                {categories.map((cat, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td className="fw-600" style={{ padding: '12px' }}>{cat.name}</td>
+                    <td className="center-text fw-700" style={{ color: 'var(--color-danger)', padding: '12px' }}>-{cat.deduction} Point</td>
+                    <td className="text-muted" style={{ fontSize: '13px', padding: '12px' }}>{cat.note || '-'}</td>
+                  </tr>
+                ))}
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <td className="fw-600" style={{ padding: '12px' }}>Minggon</td>
+                  <td className="center-text fw-700 text-primary" style={{ padding: '12px' }}>+1 Point</td>
+                  <td className="text-muted" style={{ fontSize: '13px', padding: '12px' }}>Ditambahkan ke total point per aktivitas Minggon.</td>
+                </tr>
+                <tr>
+                  <td className="fw-600" style={{ padding: '12px' }}>Lain-lain</td>
+                  <td className="center-text fw-700" style={{ color: '#f59e0b', padding: '12px' }}>+/- Point</td>
+                  <td className="text-muted" style={{ fontSize: '13px', padding: '12px' }}>Penyesuaian manual dari Admin (contoh: +5 reward, -10 kasus khusus).</td>
                 </tr>
               </tbody>
             </table>
           </div>
+
+          <div style={{ marginTop: '24px' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '12px', fontWeight: 700 }}>Grading System</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+               <div style={{ padding: '10px', background: '#F0FDF4', borderLeft: '4px solid #22c55e', borderRadius: '4px' }}>
+                 <div className="fw-700" style={{ color: '#166534', fontSize: '16px' }}>Grade A</div>
+                 <div style={{ fontSize: '13px', marginTop: '4px' }}>100 - 110 (Excellent)</div>
+               </div>
+               <div style={{ padding: '10px', background: '#EFF6FF', borderLeft: '4px solid #3b82f6', borderRadius: '4px' }}>
+                 <div className="fw-700" style={{ color: '#1e40af', fontSize: '16px' }}>Grade B</div>
+                 <div style={{ fontSize: '13px', marginTop: '4px' }}>90 - 99 (Good)</div>
+               </div>
+               <div style={{ padding: '10px', background: '#FEFCE8', borderLeft: '4px solid #eab308', borderRadius: '4px' }}>
+                 <div className="fw-700" style={{ color: '#854d0e', fontSize: '16px' }}>Grade C</div>
+                 <div style={{ fontSize: '13px', marginTop: '4px' }}>80 - 89 (Improvement)</div>
+               </div>
+               <div style={{ padding: '10px', background: '#FFF7ED', borderLeft: '4px solid #f97316', borderRadius: '4px' }}>
+                 <div className="fw-700" style={{ color: '#9a3412', fontSize: '16px' }}>Grade D</div>
+                 <div style={{ fontSize: '13px', marginTop: '4px' }}>70 - 79 (Attention)</div>
+               </div>
+               <div style={{ padding: '10px', background: '#FEF2F2', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+                 <div className="fw-700" style={{ color: '#991b1b', fontSize: '16px' }}>Grade E</div>
+                 <div style={{ fontSize: '13px', marginTop: '4px' }}>&lt; 70 (Critical)</div>
+               </div>
+            </div>
+          </div>
           
-          <div className="footer-note">
+          <div className="footer-note" style={{ marginTop: '20px' }}>
             <ChevronRight size={14} />
-            <span>Semakin banyak kesalahan, poin yang didapat semakin kecil.</span>
+            <span>Poin di atas 100 tetap valid jika mendapat poin tambahan.</span>
           </div>
         </div>
       </div>
@@ -156,3 +106,4 @@ const KpiParameterModal: React.FC<KpiParameterModalProps> = ({ isOpen, onClose }
 };
 
 export default KpiParameterModal;
+

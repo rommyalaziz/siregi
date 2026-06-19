@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
+import { supabase } from '../lib/supabase';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -22,11 +23,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // Get user session to check role
   const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
-  // Make admin check more robust (case-insensitive)
-  const isAdmin = user?.role?.toLowerCase().includes('admin');
+  const role = user?.role?.toLowerCase() || '';
+  const isAdmin = role.includes('admin');
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
 
-  const handleLogout = (e: React.MouseEvent) => {
+  const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
+    // Log logout activity
+    if (user?.id) {
+      await supabase.from('activity_logs').insert({
+        user_id: user.id,
+        activity_type: 'LOGOUT',
+        user_agent: navigator.userAgent
+      });
+    }
     // Clear the session from sessionStorage
     sessionStorage.removeItem('msa_session');
     // Force redirect back to login
@@ -83,18 +93,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         
         {isAdmin && (
           <>
-            <NavLink to="/branches" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Building2 size={16} />
-              <span>Progres Cabang</span>
-            </NavLink>
-            <NavLink to="/admin/update" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <UserPlus size={16} />
-              <span>Update Kesalahan</span>
-            </NavLink>
-            <NavLink to="/kunjungan" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <ClipboardCheck size={16} />
-              <span>Kunjungan</span>
-            </NavLink>
+            {isSuperAdmin && (
+              <>
+                <NavLink to="/branches" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                  <Building2 size={16} />
+                  <span>Progres Cabang</span>
+                </NavLink>
+                <NavLink to="/admin/update" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                  <UserPlus size={16} />
+                  <span>Update Kesalahan</span>
+                </NavLink>
+                <NavLink to="/kunjungan" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                  <ClipboardCheck size={16} />
+                  <span>Kunjungan</span>
+                </NavLink>
+              </>
+            )}
+            
             <NavLink to="/admin/rekap-pengeluaran" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Banknote size={16} />
               <span>Rekap Pengeluaran</span>
@@ -103,6 +118,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <Users size={16} />
               <span>Data User</span>
             </NavLink>
+            
+            {isSuperAdmin && (
+              <NavLink to="/admin/log-aktivitas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                <Activity size={16} />
+                <span>Log Aktivitas</span>
+              </NavLink>
+            )}
           </>
         )}
 

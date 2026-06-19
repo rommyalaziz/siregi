@@ -93,7 +93,9 @@ const calcPencairanPct = (p: ArsipPencairan | null): number => {
 const ArsipDigital = () => {
   const sessionData = sessionStorage.getItem('msa_session');
   const sessionUser = sessionData ? JSON.parse(sessionData) : null;
-  const isAdmin = sessionUser?.role?.toLowerCase().includes('admin');
+  const role = sessionUser?.role?.toLowerCase() || '';
+  const isAdmin = role.includes('admin');
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
   const userNamaCabang = sessionUser?.nama_cabang;
 
   const [data, setData] = useState<ArsipDigital[]>([]);
@@ -101,7 +103,7 @@ const ArsipDigital = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState({ type: '', text: '' });
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'anggota_desc' | 'pencairan_desc' | 'nama_az' | 'tanggal'>('anggota_desc');
+  const [sortBy, setSortBy] = useState<'anggota_desc' | 'non_kk_desc' | 'pencairan_desc' | 'nama_az' | 'tanggal'>('anggota_desc');
 
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -170,10 +172,13 @@ const ArsipDigital = () => {
     rows = [...rows].sort((a, b) => {
       const pctA = a.arsip_anggota?.[0]?.prosentase ?? 0;
       const pctB = b.arsip_anggota?.[0]?.prosentase ?? 0;
+      const pctNonKkA = a.arsip_anggota?.[0]?.toleransi_kk ?? 0;
+      const pctNonKkB = b.arsip_anggota?.[0]?.toleransi_kk ?? 0;
       const penA = calcPencairanPct(a.arsip_pencairan?.[0] ?? null);
       const penB = calcPencairanPct(b.arsip_pencairan?.[0] ?? null);
 
       if (sortBy === 'anggota_desc') return pctB - pctA;
+      if (sortBy === 'non_kk_desc') return pctNonKkB - pctNonKkA;
       if (sortBy === 'pencairan_desc') return penB - penA;
       if (sortBy === 'nama_az') return a.nama_cabang.localeCompare(b.nama_cabang);
       if (sortBy === 'tanggal') {
@@ -220,7 +225,7 @@ const ArsipDigital = () => {
           <h1>Arsip Digital</h1>
           <p>Monitoring kelengkapan arsip dokumen seluruh cabang</p>
         </div>
-        {isAdmin && (
+        {isSuperAdmin && (
           <div className="header-actions">
             <button className="btn btn-primary kj-btn-compact" onClick={openAdd}>
               <Plus size={14} />
@@ -234,6 +239,15 @@ const ArsipDigital = () => {
       {message.text && (
         <div className={`arsip-notification ${message.type}`}>{message.text}</div>
       )}
+
+      {/* Keterangan */}
+      <div className="arsip-info-box">
+        <ul>
+          <li><strong>Arsip Data Anggota</strong> Perhitungan berdasarkan keseluruhan data anggota aktif dengan kelengkapan dokumen wajib 01–08.</li>
+          <li><strong>Arsip Data Anggota NON KK</strong> Perhitungan berdasarkan keseluruhan data anggota aktif, dengan ketentuan anggota yang bergabung sebelum tahun 2025 tidak diperhitungkan. Kelengkapan dokumen wajib 01–08, dengan pengecualian dokumen 02.</li>
+          <li><strong>Arsip Pencairan</strong> Perhitungan berdasarkan keseluruhan data pencairan pada periode tahun 2026 sampai dengan 17 Juni 2026.</li>
+        </ul>
+      </div>
 
       {/* Stats Strip */}
       <div className="arsip-stats-strip">
@@ -284,6 +298,7 @@ const ArsipDigital = () => {
             <ArrowUpDown size={14} />
             <select className="arsip-sort-select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
               <option value="anggota_desc">Arsip Anggota Terbesar</option>
+              <option value="non_kk_desc">Arsip Anggota Non KK Terbesar</option>
               <option value="pencairan_desc">Arsip Pencairan Terbesar</option>
               <option value="nama_az">Nama Cabang A–Z</option>
               <option value="tanggal">Tanggal Cek Terbaru</option>
@@ -300,6 +315,7 @@ const ArsipDigital = () => {
                 <th>Kode Cabang</th>
                 <th>Nama Cabang</th>
                 <th>Arsip Data Anggota (%)</th>
+                <th>Arsip Data Anggota (Non-KK) (%)</th>
                 <th>Arsip Pencairan (%)</th>
                 <th>Tanggal Cek</th>
                 <th className="center-text">Aksi</th>
@@ -308,7 +324,7 @@ const ArsipDigital = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: 'var(--color-text-muted)' }}>
                       <Loader2 size={24} className="animate-spin" />
                       <span>Memuat data arsip...</span>
@@ -317,7 +333,7 @@ const ArsipDigital = () => {
                 </tr>
               ) : processedData.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <div className="arsip-empty">
                       <FolderArchive size={40} />
                       <p>{searchQuery ? 'Tidak ada cabang yang cocok.' : 'Belum ada data arsip.'}</p>
@@ -337,6 +353,9 @@ const ArsipDigital = () => {
                     <td data-label="Arsip Anggota">
                       <PctCell pct={pctAnggota} />
                     </td>
+                    <td data-label="Arsip Anggota (Non-KK)">
+                      <PctCell pct={anggota?.toleransi_kk ?? 0} />
+                    </td>
                     <td data-label="Arsip Pencairan">
                       <PctCell pct={pctPencairan} />
                     </td>
@@ -352,7 +371,7 @@ const ArsipDigital = () => {
                         >
                           <Eye size={14} />
                         </button>
-                        {isAdmin && (
+                        {isSuperAdmin && (
                           <>
                             <button className="icon-btn" title="Edit" onClick={() => openEdit(item)}>
                               <Pencil size={14} />

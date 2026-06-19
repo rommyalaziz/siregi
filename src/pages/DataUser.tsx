@@ -26,7 +26,9 @@ const DataUser = () => {
   // Session & Access control
   const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
-  const isAdmin = user?.role?.toLowerCase().includes('admin');
+  const role = user?.role?.toLowerCase() || '';
+  const isAdmin = role.includes('admin');
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
 
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -355,16 +357,18 @@ const DataUser = () => {
         </div>
         
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            className="btn btn-primary"
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-          >
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            <span>{showForm ? 'Batal' : 'Tambah Akun'}</span>
-          </button>
+          {isSuperAdmin && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => {
+                if (showForm) resetForm();
+                else setShowForm(true);
+              }}
+            >
+              {showForm ? <X size={16} /> : <Plus size={16} />}
+              <span>{showForm ? 'Batal' : 'Tambah Akun'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -686,22 +690,28 @@ const DataUser = () => {
                     </td>
                     <td className="center-text" data-label="Aksi">
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                        <button 
-                          className="icon-btn" 
-                          title="Edit Akun" 
-                          onClick={() => handleEditClick(acc)}
-                          style={{ color: 'var(--color-primary)', background: '#f0fdfa' }}
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button 
-                          className="icon-btn" 
-                          title="Hapus Akun" 
-                          onClick={() => handleDeleteClick(acc.id, acc.cabang?.nama_cabang || 'Cabang')}
-                          style={{ color: '#dc2626', background: '#fef2f2' }}
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        {isSuperAdmin ? (
+                          <>
+                            <button 
+                              className="icon-btn" 
+                              title="Edit Akun" 
+                              onClick={() => handleEditClick(acc)}
+                              style={{ color: 'var(--color-primary)', background: '#f0fdfa' }}
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                            <button 
+                              className="icon-btn" 
+                              title="Hapus Akun" 
+                              onClick={() => handleDeleteClick(acc.id, acc.cabang?.nama_cabang || 'Cabang')}
+                              style={{ color: '#dc2626', background: '#fef2f2' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '11px' }}>-</span>
+                        )}
                       </div>
                     </td>
                   </tr>

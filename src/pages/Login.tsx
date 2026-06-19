@@ -53,6 +53,13 @@ const Login = () => {
         cabang_id: user.cabang_id || null
       }));
 
+      // Log login activity
+      await supabase.from('activity_logs').insert({
+        user_id: user.id,
+        activity_type: 'LOGIN',
+        user_agent: navigator.userAgent
+      });
+
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat login');

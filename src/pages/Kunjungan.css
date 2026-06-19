@@ -646,17 +646,14 @@
     margin: 15mm;
   }
   
-  /* Hide app wrappers and layout elements */
   body {
     background: white !important;
   }
+  
+  /* Hide all common layout elements */
   .sidebar, .top-nav, .header, .main-header, .bottom-nav, .mobile-only { display: none !important; }
-  
-  /* Hide Kunjungan page elements */
-  .kunjungan-header, .kunjungan-stats-grid, .kunjungan-filter-bar, .kunjungan-table-card { 
-    display: none !important; 
-  }
-  
+  .mobile-only.flex { display: none !important; }
+
   /* Reset containers */
   .main-layout, .main-content, .content-area, .kunjungan-container, #root {
     padding: 0 !important;
@@ -667,28 +664,28 @@
     display: block !important;
   }
 
-  /* Style modal for print */
-  .kj-modal-overlay { 
-    position: static !important; 
-    padding: 0 !important; 
-    background: none !important; 
-    backdrop-filter: none !important; 
+  /* Always hide modals during print (detail print uses separate window) */
+  .kj-modal-overlay {
+    display: none !important;
+  }
+
+  /* REKAP MODE: Print the table */
+  body.print-mode-rekap .kunjungan-header,
+  body.print-mode-rekap .kunjungan-stats-grid,
+  body.print-mode-rekap .kunjungan-filter-bar {
+    display: none !important;
+  }
+  
+  body.print-mode-rekap .kunjungan-table-card {
     display: block !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   
-  .kj-modal { 
-    box-shadow: none !important; 
-    border: none !important; 
-    max-width: 100% !important; 
-    margin: 0 !important; 
+  body.print-mode-rekap .kj-action-buttons {
+    display: none !important;
   }
-  
-  .kj-modal-body {
-    overflow: visible !important;
-    max-height: none !important;
-    padding: 0 !important;
-  }
-  
+
   .kj-print-hide { display: none !important; }
   
   .print-signatures {

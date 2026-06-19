@@ -7,6 +7,24 @@ import { Search, Filter, Eye, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, Fi
 import { supabase } from '../lib/supabase';
 import './TableStyles.css';
 
+export const ERROR_WEIGHTS = {
+  releaseVoucher: 3,
+  unapprovePengajuan: 3,
+  recalculateDelinquency: 3,
+  transferPencairan: 10,
+  salahGenerate: 5,
+  validasi: 3,
+  tiketPerbaikan: 10,
+};
+
+export const getGradeAndStatus = (point: number) => {
+  if (point >= 100) return { grade: 'A', status: 'Excellent', color: '#22c55e', variant: 'success' };
+  if (point >= 90) return { grade: 'B', status: 'Good', color: '#3b82f6', variant: 'info' };
+  if (point >= 80) return { grade: 'C', status: 'Improvement', color: '#eab308', variant: 'warning' };
+  if (point >= 70) return { grade: 'D', status: 'Attention', color: '#f97316', variant: 'delayed' };
+  return { grade: 'E', status: 'Critical', color: '#ef4444', variant: 'critical' };
+};
+
 const StaffProgress = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,34 +86,33 @@ const StaffProgress = () => {
         });
         const uniqueStaffList = Array.from(uniqueMap.values());
 
-        // Calculate Total KPI for each staff
-        const calcPts = (val: number, params: any) => {
-          for (const p of params) {
-            if (val >= p.min && val <= p.max) return p.pts;
-          }
-          return 0;
-        };
-
+        // Calculate Total KPI for each staff based on New Base 100 Logic
         const calculatedData = uniqueStaffList.map(s => {
-          // Fix p_sg locally to override the faulty SQL view value (which returns 11 for 1 error)
-          const p_sg_fixed = calcPts(s.salah_generate || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
+          const deduction = 
+            (s.release_voucher || 0) * ERROR_WEIGHTS.releaseVoucher +
+            (s.unapprove_pengajuan || 0) * ERROR_WEIGHTS.unapprovePengajuan +
+            (s.recalculate_delinquency || 0) * ERROR_WEIGHTS.recalculateDelinquency +
+            (s.transfer_pencairan || 0) * ERROR_WEIGHTS.transferPencairan +
+            (s.salah_generate || 0) * ERROR_WEIGHTS.salahGenerate +
+            (s.validasi > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi + // Validasi counts as 1 error regardless of count
+            (s.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
 
-          const totalKPI = (s.p_rv || 0) + (s.p_up || 0) + (s.p_rd || 0) + (s.p_tp || 0) + 
-                           p_sg_fixed + (s.p_ppi || 0) + (s.p_val || 0) + (s.p_tpk || 0) + (s.p_ll || 0);
+          const isMinggonMonth = s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+          const minggon = isMinggonMonth ? (s.ppi_not_entry || 0) : 0;
+          const lainLain = s.lain_lain || 0;
           
-          // Determine Status based on Total KPI (New Thresholds)
-          let status = 'critical';
-          let color = 'var(--color-danger)'; // Red
-          
-          if (totalKPI >= 90) {
-            status = 'on-track';
-            color = '#22c55e'; // Green
-          } else if (totalKPI >= 70) {
-            status = 'delayed';
-            color = 'var(--color-warning)'; // Yellow/Orange
-          }
+          const totalKPI = 100 - deduction + minggon + lainLain;
+          const gradeInfo = getGradeAndStatus(totalKPI);
 
-          return { ...s, totalKPI, status, kpiColor: color };
+          return { 
+            ...s, 
+            totalKPI, 
+            grade: gradeInfo.grade,
+            status: gradeInfo.status, 
+            kpiColor: gradeInfo.color,
+            statusVariant: gradeInfo.variant,
+            totalDeduction: deduction
+          };
         });
 
         // Sort by Total KPI descending
@@ -118,16 +135,6 @@ const StaffProgress = () => {
     };
   }, [selectedMonth, selectedYear]);
 
-  const getStatusConfig = (status: string) => {
-    const s = (status || '').toLowerCase().trim();
-    if (s === 'on track' || s === 'on-track') {
-      return { variant: 'on-track' as BadgeVariant, label: 'On Track' };
-    }
-    if (s === 'delayed' || s === 'needs focus' || s === 'needs-focus') {
-      return { variant: 'delayed' as BadgeVariant, label: 'Need Focus' };
-    }
-    return { variant: 'critical' as BadgeVariant, label: 'Critical' };
-  };
 
   const openDrawer = async (staff: any) => {
     setSelectedStaff(staff);
@@ -164,14 +171,7 @@ const StaffProgress = () => {
 
         const totals = records.reduce((acc, curr) => {
           const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
-          if (isMinggon) {
-            minggon_sum += (curr.ppi_not_entry || 0);
-            hasMinggonMonth = true;
-          } else {
-            ppi_old_sum += (curr.ppi_not_entry || 0);
-            hasOldMonth = true;
-          }
-
+          
           return {
             rv: (acc.rv || 0) + (curr.release_voucher || 0),
             up: (acc.up || 0) + (curr.unapprove_pengajuan || 0),
@@ -181,45 +181,46 @@ const StaffProgress = () => {
             val: latestVal, // Correct: Use latest value instead of sum
             tpk: (acc.tpk || 0) + (curr.tiket_perbaikan || 0),
             ll: (acc.ll || 0) + (curr.lain_lain || 0),
-            // Store raw sum for display
-            ppi: (acc.ppi || 0) + (curr.ppi_not_entry || 0)
+            // Store raw sum for display only for valid Minggon months
+            ppi: (acc.ppi || 0) + (isMinggon ? (curr.ppi_not_entry || 0) : 0)
           };
         }, {});
 
-        // Calculation logic to get points from totals
-        const calcPts = (val: number, params: any) => {
-          for (const p of params) {
-            if (val >= p.min && val <= p.max) return p.pts;
-          }
-          return 0;
-        };
+        // Calculate Points with New Logic for Cumulative Data
+        let totalMonthlyScore = 0;
+        let validMonthsCount = 0;
 
-        const p_rv  = calcPts(totals.rv,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-        const p_up  = calcPts(totals.up,  [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:5},{min:4,max:5,pts:3},{min:6,max:7,pts:2},{min:8,max:10,pts:1},{min:11,max:999,pts:0}]);
-        const p_rd  = calcPts(totals.rd,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
-        const p_tp  = calcPts(totals.tp,  [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-        const p_sg  = calcPts(totals.sg,  [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-        
-        let p_ppi = 0;
-        if (hasMinggonMonth && !hasOldMonth) {
-          p_ppi = minggon_sum > 0 ? 10 : 0;
-        } else if (hasOldMonth && !hasMinggonMonth) {
-          p_ppi = calcPts(ppi_old_sum, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-        } else {
-          // Campuran: Prioritaskan logika old + minggon cap 10?
-          // Atau jika ada minggon, ambil 5 poin max dari old, 5 dari minggon? 
-          // Sederhananya, pakai skor old, lalu jika minggon_sum > 0 bantu + poin hingga mentok 10.
-          let old_pts = calcPts(ppi_old_sum, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          p_ppi = old_pts;
-          if (minggon_sum > 0 && p_ppi < 10) p_ppi = 10;
-        }
+        records.forEach(curr => {
+          const m_deduction = 
+            (curr.release_voucher || 0) * ERROR_WEIGHTS.releaseVoucher +
+            (curr.unapprove_pengajuan || 0) * ERROR_WEIGHTS.unapprovePengajuan +
+            (curr.recalculate_delinquency || 0) * ERROR_WEIGHTS.recalculateDelinquency +
+            (curr.transfer_pencairan || 0) * ERROR_WEIGHTS.transferPencairan +
+            (curr.salah_generate || 0) * ERROR_WEIGHTS.salahGenerate +
+            ((curr.validasi || 0) > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
+            (curr.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
+            
+          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          const m_minggon = isMinggon ? (curr.ppi_not_entry || 0) : 0;
+          const m_ll = curr.lain_lain || 0;
+          
+          totalMonthlyScore += (100 - m_deduction + m_minggon + m_ll);
+          validMonthsCount++;
+        });
 
-        const p_val = calcPts(totals.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-        const p_tpk = calcPts(totals.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-        const p_ll  = 10 + (totals.ll || 0);
+        const totalPoints = validMonthsCount > 0 ? Math.round(totalMonthlyScore / validMonthsCount) : 100;
+        const gradeInfo = getGradeAndStatus(totalPoints);
 
-        const totalPoints = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
-        setCumulativeData({ ...totals, totalPoints });
+        const deduction = 
+          (totals.rv || 0) * ERROR_WEIGHTS.releaseVoucher +
+          (totals.up || 0) * ERROR_WEIGHTS.unapprovePengajuan +
+          (totals.rd || 0) * ERROR_WEIGHTS.recalculateDelinquency +
+          (totals.tp || 0) * ERROR_WEIGHTS.transferPencairan +
+          (totals.sg || 0) * ERROR_WEIGHTS.salahGenerate +
+          (totals.val > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
+          (totals.tpk || 0) * ERROR_WEIGHTS.tiketPerbaikan;
+
+        setCumulativeData({ ...totals, totalPoints, deduction, gradeInfo });
       }
     } catch (err) {
       console.error('Error fetching cumulative data:', err);
@@ -235,7 +236,7 @@ const StaffProgress = () => {
     if (data.length === 0) return;
     
     // Header for CSV
-    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "PPI", "VAL", "TPK", "LL", "Point", "Status"];
+    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "Minggon", "VAL", "TPK", "LL", "Point", "Grade", "Status"];
     
     // Map data to rows
     const rows = data.map((s, index) => [
@@ -248,11 +249,12 @@ const StaffProgress = () => {
       s.recalculate_delinquency || 0,
       s.transfer_pencairan || 0,
       s.salah_generate || 0,
-      s.ppi_not_entry || 0, // Now "Minggon"
+      s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode)) ? (s.ppi_not_entry || 0) : 0, // Now "Minggon"
       s.validasi || 0,
       s.tiket_perbaikan || 0,
       s.lain_lain || 0,
       s.totalKPI,
+      s.grade,
       s.status
     ]);
 
@@ -394,7 +396,8 @@ const StaffProgress = () => {
                     <span>LAIN-LAIN</span>
                   </div>
                 </th>
-                <th style={{ minWidth: '85px' }}>Point</th>
+                <th style={{ minWidth: '70px' }}>POINT</th>
+                <th className="center-text">GRADE</th>
                 <th className="center-text">STATUS</th>
                 <th className="center-text">AKSI</th>
               </tr>
@@ -425,7 +428,6 @@ const StaffProgress = () => {
                   // Apply 20 staff limit for default view (specific month, no search)
                   .slice(0, (!searchQuery && selectedMonth !== 'Semua') ? 20 : undefined)
                   .map((staff, index) => {
-                  const statusConfig = getStatusConfig(staff.status);
                   return (
                     <tr key={staff.id}>
                       <td className="center-text mono text-muted" data-label="No">{index + 1}</td>
@@ -455,7 +457,11 @@ const StaffProgress = () => {
                       <td className="center-text mono" data-label="Recalculate Delinquency">{staff.recalculate_delinquency === 0 ? '-' : staff.recalculate_delinquency}</td>
                       <td className="center-text mono" data-label="Transfer Pencairan">{staff.transfer_pencairan === 0 ? '-' : staff.transfer_pencairan}</td>
                       <td className="center-text mono" data-label="Salah Generate">{staff.salah_generate === 0 ? '-' : staff.salah_generate}</td>
-                      <td className="center-text mono" data-label="Minggon">{staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry}</td>
+                      <td className="center-text mono" data-label="Minggon">
+                        {(staff.tahun > 2026 || (staff.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(staff.periode))) 
+                          ? (staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry) 
+                          : '-'}
+                      </td>
                       <td className="center-text mono" data-label="Validasi">{staff.validasi === 0 ? '-' : staff.validasi}</td>
                       <td className="center-text mono" data-label="Tiket Perbaikan">{staff.tiket_perbaikan === 0 ? '-' : staff.tiket_perbaikan}</td>
                       <td className="center-text mono" data-label="Lain-lain">
@@ -487,21 +493,18 @@ const StaffProgress = () => {
                         )}
                       </td>
                       <td data-label="Point">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ flex: 1 }}>
-                            <ProgressBar 
-                              progress={staff.totalKPI} 
-                              color={staff.kpiColor}
-                            />
-                          </div>
-                          <span className="mono fw-600" style={{ fontSize: '12px', minWidth: '35px', color: staff.kpiColor }}>
-                            {staff.totalKPI}%
-                          </span>
+                        <span className="mono fw-600" style={{ fontSize: '14px', color: staff.kpiColor }}>
+                          {staff.totalKPI}
+                        </span>
+                      </td>
+                      <td className="center-text" data-label="Grade">
+                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: staff.kpiColor }}>
+                          {staff.grade}
                         </div>
                       </td>
                       <td className="center-text" data-label="Status">
-                        <Badge variant={statusConfig.variant}>
-                          {statusConfig.label}
+                        <Badge variant={staff.statusVariant as BadgeVariant}>
+                          {staff.status}
                         </Badge>
                       </td>
                       <td className="center-text" data-label="Aksi">
@@ -556,17 +559,33 @@ const StaffProgress = () => {
             
             <div className="drawer-section">
               <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Akumulasi Kesalahan {selectedYear !== 'Semua' ? selectedYear : ''}
-                <Badge variant={getStatusConfig(selectedStaff.status).variant}>
-                  {selectedStaff.totalKPI}%
+                Akumulasi Performa {selectedYear !== 'Semua' ? selectedYear : ''}
+                <Badge variant={selectedStaff.statusVariant as BadgeVariant}>
+                  Grade {selectedStaff.grade}
                 </Badge>
               </h3>
-              <div style={{ marginTop: '12px' }}>
-                <ProgressBar 
-                  progress={selectedStaff.totalKPI} 
-                  color={selectedStaff.kpiColor}
-                  height="8px"
-                />
+              <div style={{ marginTop: '12px', background: 'var(--color-bg-alt)', padding: '16px', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                  <span className="text-muted">Total Kesalahan:</span>
+                  <span className="fw-600" style={{ color: 'var(--color-danger)' }}>-{selectedStaff.totalDeduction} Point</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                  <span className="text-muted">Minggon:</span>
+                  <span className="fw-600 text-primary">+{selectedStaff.ppi_not_entry || 0} Point</span>
+                </div>
+                {selectedStaff.lain_lain !== 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                    <span className="text-muted">Lain-lain:</span>
+                    <span className="fw-600" style={{ color: selectedStaff.lain_lain > 0 ? '#22c55e' : 'var(--color-danger)' }}>
+                      {selectedStaff.lain_lain > 0 ? '+' : ''}{selectedStaff.lain_lain} Point
+                    </span>
+                  </div>
+                )}
+                <div style={{ height: '1px', background: 'var(--color-border)', margin: '12px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="fw-600">Final Point:</span>
+                  <span className="fw-700" style={{ fontSize: '20px', color: selectedStaff.kpiColor }}>{selectedStaff.totalKPI}</span>
+                </div>
               </div>
             </div>
 
@@ -606,7 +625,7 @@ const StaffProgress = () => {
                     <span className="label">Tiket Perbaikan</span>
                     <span className="value">{cumulativeData.tpk}</span>
                   </div>
-                  <div className="cum-item">
+                  <div className="cum-item" style={{ gridColumn: 'span 2' }}>
                     <span className="label">Lain-lain</span>
                     <span className="value">
                       {cumulativeData.ll === 0 
@@ -618,9 +637,38 @@ const StaffProgress = () => {
                   </div>
                 </div>
                 
-                <div className="cum-footer" style={{ marginTop: '16px', padding: '12px', background: 'var(--color-bg-alt)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                   <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Estimasi Skor Akumulatif</div>
-                   <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>{cumulativeData.totalPoints}%</div>
+                <div className="cum-footer" style={{ marginTop: '16px', padding: '16px', background: 'var(--color-bg-alt)', borderRadius: 'var(--radius-md)' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                     <span className="text-muted">Total Pengurangan Kesalahan:</span>
+                     <span className="fw-600" style={{ color: 'var(--color-danger)' }}>-{cumulativeData.deduction} Point</span>
+                   </div>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                     <span className="text-muted">Total Minggon:</span>
+                     <span className="fw-600 text-primary">+{cumulativeData.ppi} Point</span>
+                   </div>
+                   {cumulativeData.ll !== 0 && (
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                       <span className="text-muted">Total Lain-lain:</span>
+                       <span className="fw-600" style={{ color: cumulativeData.ll > 0 ? '#22c55e' : 'var(--color-danger)' }}>
+                         {cumulativeData.ll > 0 ? '+' : ''}{cumulativeData.ll} Point
+                       </span>
+                     </div>
+                   )}
+                   <div style={{ height: '1px', background: 'var(--color-border)', margin: '12px 0' }} />
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <div>
+                       <div className="fw-600" style={{ fontSize: '16px' }}>Final Point Akumulatif</div>
+                       <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>Status: {cumulativeData.gradeInfo.status}</div>
+                     </div>
+                     <div style={{ textAlign: 'right' }}>
+                       <div className="fw-700" style={{ fontSize: '24px', color: cumulativeData.gradeInfo.color }}>
+                         {cumulativeData.totalPoints}
+                       </div>
+                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: cumulativeData.gradeInfo.color }}>
+                         Grade {cumulativeData.gradeInfo.grade}
+                       </div>
+                     </div>
+                   </div>
                 </div>
               </div>
             )}

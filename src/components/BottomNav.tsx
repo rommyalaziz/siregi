@@ -5,7 +5,8 @@ import './BottomNav.css';
 const BottomNav = () => {
   const sessionData = sessionStorage.getItem('msa_session');
   const user = sessionData ? JSON.parse(sessionData) : null;
-  const isAdmin = user?.role?.toLowerCase().includes('admin');
+  const role = user?.role?.toLowerCase() || '';
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
 
   return (
     <nav className="bottom-nav mobile-only flex">
@@ -17,7 +18,7 @@ const BottomNav = () => {
         <Users size={20} />
         <span>Review</span>
       </NavLink>
-      {isAdmin && (
+      {isSuperAdmin && (
         <>
           <NavLink to="/branches" className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}>
             <Building2 size={20} />

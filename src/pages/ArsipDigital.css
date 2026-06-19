@@ -6,7 +6,39 @@
 .arsip-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+}
+
+/* ---------- Info Box ---------- */
+.arsip-info-box {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+.arsip-info-box ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.arsip-info-box li {
+  line-height: 1.35;
+}
+
+.arsip-info-box li strong {
+  font-weight: 600;
+  color: var(--color-text-main);
+  display: block;
+  margin-bottom: 2px;
 }
 
 /* ---------- Stats Strip ---------- */

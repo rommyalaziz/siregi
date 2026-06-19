@@ -4,6 +4,7 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { Search, Printer, Loader2, TrendingUp, TrendingDown, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Filter, Download } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { supabase } from '../lib/supabase';
+import { ERROR_WEIGHTS, getGradeAndStatus } from './StaffProgress';
 import './TableStyles.css';
 
 const DetailedReport = () => {
@@ -67,17 +68,11 @@ const DetailedReport = () => {
           acc[curr.id].rd += curr.recalculate_delinquency || 0;
           acc[curr.id].tp += curr.transfer_pencairan || 0;
           acc[curr.id].sg += curr.salah_generate || 0;
-          acc[curr.id].sg += curr.salah_generate || 0;
           
           const isMinggonMonth = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
-          if (isMinggonMonth) {
-            acc[curr.id].minggonSum = (acc[curr.id].minggonSum || 0) + (curr.ppi_not_entry || 0);
-            acc[curr.id].hasMinggon = true;
-          } else {
-            acc[curr.id].ppiOldSum = (acc[curr.id].ppiOldSum || 0) + (curr.ppi_not_entry || 0);
-            acc[curr.id].hasOld = true;
-          }
-          acc[curr.id].ppi += curr.ppi_not_entry || 0; // Raw sum for display
+          
+          // Store raw sum for display only for valid Minggon months
+          acc[curr.id].ppi += isMinggonMonth ? (curr.ppi_not_entry || 0) : 0; 
           
           // Logic for Validasi: Take latest month's value instead of sum
           const periodRank: Record<string, number> = {
@@ -101,65 +96,29 @@ const DetailedReport = () => {
           }
 
           // Calculate KPI for THIS specific month record
-          const calcPts = (val: number, params: any) => {
-            for (const p of params) {
-              if (val >= p.min && val <= p.max) return p.pts;
-            }
-            return 0;
-          };
+          const deduction = 
+            (curr.release_voucher || 0) * ERROR_WEIGHTS.releaseVoucher +
+            (curr.unapprove_pengajuan || 0) * ERROR_WEIGHTS.unapprovePengajuan +
+            (curr.recalculate_delinquency || 0) * ERROR_WEIGHTS.recalculateDelinquency +
+            (curr.transfer_pencairan || 0) * ERROR_WEIGHTS.transferPencairan +
+            (curr.salah_generate || 0) * ERROR_WEIGHTS.salahGenerate +
+            ((curr.validasi || 0) > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
+            (curr.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
 
-          const p_rv  = calcPts(curr.release_voucher || 0,          [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          const p_up  = calcPts(curr.unapprove_pengajuan || 0,      [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:5},{min:4,max:5,pts:3},{min:6,max:7,pts:2},{min:8,max:10,pts:1},{min:11,max:999,pts:0}]);
-          const p_rd  = calcPts(curr.recalculate_delinquency || 0,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
-          const p_tp  = calcPts(curr.transfer_pencairan || 0,        [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_sg  = calcPts(curr.salah_generate || 0,            [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          let p_ppi = 0;
-          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
-          if (isMinggon) {
-            p_ppi = (curr.ppi_not_entry || 0) > 0 ? 10 : 0;
-          } else {
-            p_ppi = calcPts(curr.ppi_not_entry || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          }
-          const p_val = calcPts(curr.validasi || 0,                  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          const p_tpk = calcPts(curr.tiket_perbaikan || 0,           [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ll  = 10 + (curr.lain_lain || 0);
+          const p_ppi = isMinggonMonth ? (curr.ppi_not_entry || 0) : 0;
+          const p_ll  = curr.lain_lain || 0;
           
-          const monthKpi = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
+          const monthKpi = 100 - deduction + p_ppi + p_ll;
           acc[curr.id].monthlyHistory[curr.periode] = monthKpi;
 
           return acc;
         }, {});
 
-        // Calculate KPI for each group
-        const calcPts = (val: number, params: any) => {
-          for (const p of params) {
-            if (val >= p.min && val <= p.max) return p.pts;
-          }
-          return 0;
-        };
-
         const result = Object.values(grouped).map((s: any) => {
-          const p_rv  = calcPts(s.rv,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          const p_up  = calcPts(s.up,  [{min:0,max:0,pts:10},{min:1,max:1,pts:7},{min:2,max:3,pts:5},{min:4,max:5,pts:3},{min:6,max:7,pts:2},{min:8,max:10,pts:1},{min:11,max:999,pts:0}]);
-          const p_rd  = calcPts(s.rd,  [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:4},{min:8,max:10,pts:3},{min:11,max:13,pts:1},{min:14,max:999,pts:0}]);
-          const p_tp  = calcPts(s.tp,  [{min:0,max:0,pts:15},{min:1,max:1,pts:10},{min:2,max:3,pts:5},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_sg  = calcPts(s.sg,  [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          let p_ppi = 0;
-          if (s.hasMinggon && !s.hasOld) {
-            p_ppi = (s.minggonSum || 0) > 0 ? 10 : 0;
-          } else if (s.hasOld && !s.hasMinggon) {
-            p_ppi = calcPts(s.ppiOldSum || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          } else {
-            // Mixed
-            let old_pts = calcPts(s.ppiOldSum || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:7},{min:6,max:7,pts:5},{min:8,max:10,pts:5},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-            p_ppi = old_pts;
-            if ((s.minggonSum || 0) > 0 && p_ppi < 10) p_ppi = 10;
-          }
-          const p_val = calcPts(s.val, [{min:0,max:0,pts:10},{min:1,max:1,pts:8},{min:2,max:3,pts:7},{min:4,max:5,pts:6},{min:6,max:7,pts:5},{min:8,max:10,pts:4},{min:11,max:13,pts:3},{min:14,max:16,pts:2},{min:17,max:20,pts:1},{min:21,max:999,pts:0}]);
-          const p_tpk = calcPts(s.tpk, [{min:0,max:0,pts:15},{min:1,max:1,pts:5},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          const p_ll  = 10 + (s.ll || 0);
-
-          const totalKPI = p_rv + p_up + p_rd + p_tp + p_sg + p_ppi + p_val + p_tpk + p_ll;
+          // Hitung rata-rata nilai bulanan alih-alih mengurangi total kesalahan dari 100
+          const monthlyKeys = Object.keys(s.monthlyHistory);
+          const totalScore = monthlyKeys.reduce((sum, key) => sum + s.monthlyHistory[key], 0);
+          const totalKPI = monthlyKeys.length > 0 ? Math.round(totalScore / monthlyKeys.length) : 100;
           
           // Format trend data for sparkline (last 3 months dynamically)
           const monthOrder = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -176,11 +135,9 @@ const DetailedReport = () => {
           if (lastVal > prevVal) trendStatus = 'up';
           else if (lastVal < prevVal) trendStatus = 'down';
 
-          let color = 'var(--color-danger)';
-          if (totalKPI >= 90) color = '#22c55e';
-          else if (totalKPI >= 70) color = 'var(--color-warning)';
+          const gradeInfo = getGradeAndStatus(totalKPI);
 
-          return { ...s, totalKPI, kpiColor: color, trendData, trendStatus, keteranganHistory: s.keteranganHistory };
+          return { ...s, totalKPI, kpiColor: gradeInfo.color, grade: gradeInfo.grade, status: gradeInfo.status, statusVariant: gradeInfo.variant, trendData, trendStatus, keteranganHistory: s.keteranganHistory };
         });
 
         setData(result.sort((a, b) => b.totalKPI - a.totalKPI));
@@ -199,7 +156,7 @@ const DetailedReport = () => {
   const handleExportCSV = () => {
     if (data.length === 0) return;
     
-    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "MINGGON", "VAL", "TPK", "LL", "Point (%)", "Tren"];
+        const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "MINGGON", "VAL", "TPK", "LL", "Grade Rata-rata", "Point Rata-rata (%)", "Tren"];
     
     const rows = data.map((s, index) => [
       index + 1,
@@ -215,6 +172,7 @@ const DetailedReport = () => {
       s.val || 0,
       s.tpk || 0,
       s.ll || 0,
+      s.grade,
       s.totalKPI,
       s.trendStatus.toUpperCase()
     ]);
@@ -354,7 +312,8 @@ const DetailedReport = () => {
                   </div>
                 </th>
                 <th className="center-text">PROGRES TREN</th>
-                <th style={{ minWidth: '85px' }}>Point (%)</th>
+                <th className="center-text">GRADE RATA-RATA</th>
+                <th style={{ minWidth: '70px' }}>POINT RATA-RATA</th>
               </tr>
             </thead>
             <tbody>
@@ -428,8 +387,8 @@ const DetailedReport = () => {
                       )}
                     </td>
                     <td className="center-text" data-label="Progres Tren" style={{ padding: '4px 12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
-                         <div style={{ width: '60px', height: '28px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <div style={{ width: '80px', height: '28px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={staff.trendData}>
                                 <YAxis domain={[0, 100]} hide />
@@ -444,20 +403,17 @@ const DetailedReport = () => {
                               </LineChart>
                             </ResponsiveContainer>
                          </div>
-                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                           {staff.trendStatus === 'up' && <TrendingUp size={16} color="#22c55e" />}
-                           {staff.trendStatus === 'down' && <TrendingDown size={16} color="#ef4444" />}
-                           {staff.trendStatus === 'stable' && <span style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8' }}>STABIL</span>}
-                         </div>
                       </div>
                     </td>
-                    <td data-label="Point (%)">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                        <div style={{ flex: 1, minWidth: '40px' }}>
-                          <ProgressBar progress={staff.totalKPI} color={staff.kpiColor} />
-                        </div>
-                        <span className="mono fw-600" style={{ fontSize: '12px', color: staff.kpiColor }}>{staff.totalKPI}%</span>
+                    <td className="center-text" data-label="Grade">
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: staff.kpiColor }}>
+                        {staff.grade}
                       </div>
+                    </td>
+                    <td data-label="Point">
+                      <span className="mono fw-600" style={{ fontSize: '14px', color: staff.kpiColor }}>
+                        {staff.totalKPI}
+                      </span>
                     </td>
                   </tr>
                 ))

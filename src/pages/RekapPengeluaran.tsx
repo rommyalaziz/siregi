@@ -56,6 +56,11 @@ const RekapPengeluaran = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   
+  const sessionData = sessionStorage.getItem('msa_session');
+  const currentUser = sessionData ? JSON.parse(sessionData) : null;
+  const role = currentUser?.role?.toLowerCase() || '';
+  const isSuperAdmin = role === 'administrator' || role === 'admin';
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<Pengeluaran | null>(null);
@@ -519,9 +524,11 @@ const RekapPengeluaran = () => {
           <button className="btn-danger" onClick={exportToPDF}>
             <FileText size={18} /> PDF
           </button>
-          <button className="btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
-            <Plus size={18} /> Input Baru
-          </button>
+          {isSuperAdmin && (
+            <button className="btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
+              <Plus size={18} /> Input Baru
+            </button>
+          )}
         </div>
       </div>
 
@@ -613,8 +620,14 @@ const RekapPengeluaran = () => {
                     <td style={{ fontWeight: 'bold' }}>{formatNumber(item.total)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button className="btn-icon" onClick={() => handleEdit(item)}><Edit size={16} /></button>
-                        <button className="btn-icon delete" onClick={() => handleDelete(item.id)}><Trash2 size={16} /></button>
+                        {isSuperAdmin ? (
+                          <>
+                            <button className="btn-icon" onClick={() => handleEdit(item)}><Edit size={16} /></button>
+                            <button className="btn-icon delete" onClick={() => handleDelete(item.id)}><Trash2 size={16} /></button>
+                          </>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '11px' }}>-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
