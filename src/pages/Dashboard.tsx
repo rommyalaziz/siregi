@@ -102,8 +102,6 @@ const Dashboard = () => {
         let errRV = 0, errUP = 0, errRD = 0, errTPC = 0, errSG = 0, errPPI = 0, errVAL = 0, errTP = 0, errLL = 0;
 
         const processedStaff = staff.map(s => {
-          const p_sg_fixed = calcPts(s.salah_generate || 0, [{min:0,max:0,pts:10},{min:1,max:1,pts:6},{min:2,max:3,pts:2},{min:4,max:5,pts:1},{min:6,max:999,pts:0}]);
-          
           errRV += (s.release_voucher || 0);
           errUP += (s.unapprove_pengajuan || 0);
           errRD += (s.recalculate_delinquency || 0);
@@ -114,34 +112,48 @@ const Dashboard = () => {
           errTP += (s.tiket_perbaikan || 0);
           errLL += (s.lain_lain || 0);
 
-          const totalKPI = (s.p_rv || 0) + (s.p_up || 0) + (s.p_rd || 0) + (s.p_tp || 0) + 
-                           p_sg_fixed + (s.p_ppi || 0) + (s.p_val || 0) + (s.p_tpk || 0) + (s.p_ll || 0);
+          // Update: Gunakan perhitungan Base 100 agar sinkron dengan halaman Performance Review
+          const deduction = 
+            (s.release_voucher || 0) * ERROR_WEIGHTS.releaseVoucher +
+            (s.unapprove_pengajuan || 0) * ERROR_WEIGHTS.unapprovePengajuan +
+            (s.recalculate_delinquency || 0) * ERROR_WEIGHTS.recalculateDelinquency +
+            (s.transfer_pencairan || 0) * ERROR_WEIGHTS.transferPencairan +
+            (s.salah_generate || 0) * ERROR_WEIGHTS.salahGenerate +
+            ((s.validasi || 0) > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
+            (s.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
+
+          const isMinggon = s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+          const m_minggon = isMinggon ? (s.ppi_not_entry || 0) : 0;
+          const m_ll = s.lain_lain || 0;
+
+          const totalKPI = 100 - deduction + m_minggon + m_ll;
+          const gradeInfo = getGradeAndStatus(totalKPI);
           
           let status = 'critical';
-          if (totalKPI >= 90) status = 'on-track';
-          else if (totalKPI >= 70) status = 'delayed';
-          
+          if (gradeInfo.status === 'success' || gradeInfo.status === 'info') status = 'on-track';
+          else if (gradeInfo.status === 'warning') status = 'delayed';
+
           return { ...s, totalKPI, status };
         });
 
         setData(processedStaff);
         
         setErrorCategories([
-          { name: 'Rel. Voucher', value: errRV || 12 },
-          { name: 'Unapprove', value: errUP || 8 },
-          { name: 'Recalculate', value: errRD || 5 },
-          { name: 'Trf Pencairan', value: errTPC || 0 },
-          { name: 'Salah Gen.', value: errSG || 4 },
-          { name: 'Minggon', value: errPPI || 0 },
-          { name: 'Validasi', value: errVAL || 0 },
-          { name: 'Tiket', value: errTP || 15 },
-          { name: 'Lain-Lain', value: errLL || 0 }
+          { name: 'Rel. Voucher', value: errRV },
+          { name: 'Unapprove', value: errUP },
+          { name: 'Recalculate', value: errRD },
+          { name: 'Trf Pencairan', value: errTPC },
+          { name: 'Salah Gen.', value: errSG },
+          { name: 'Minggon', value: errPPI },
+          { name: 'Validasi', value: errVAL },
+          { name: 'Tiket', value: errTP },
+          { name: 'Lain-Lain', value: errLL }
         ]);
 
         const uniqueStaffIds = new Set(processedStaff.map(s => s.id));
         const totalStaff = uniqueStaffIds.size;
         const avgKPI = Math.round(processedStaff.reduce((acc, curr) => acc + (curr.totalKPI || 0), 0) / (processedStaff.length || 1));
-        const totalTickets = processedStaff.reduce((acc, curr) => acc + (curr.tpk || 0), 0);
+        const totalTickets = errTP;
         const needSupport = processedStaff.filter(s => s.status === 'critical' || s.status === 'delayed').length;
 
         setSummary({ avgKPI, totalStaff, totalTickets, needSupport });
