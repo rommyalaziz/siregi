@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
-import { ProgressBar } from '../components/ui/ProgressBar';
-import { Search, Printer, Loader2, TrendingUp, TrendingDown, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Filter, Download } from 'lucide-react';
+import { Search, Printer, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Filter, Download } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { supabase } from '../lib/supabase';
 import { ERROR_WEIGHTS, getGradeAndStatus } from './StaffProgress';

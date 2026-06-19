@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Badge, type BadgeVariant } from '../components/ui/Badge';
-import { ProgressBar } from '../components/ui/ProgressBar';
+
 import { Drawer } from '../components/Drawer';
 import { Search, Filter, Eye, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -164,10 +164,7 @@ const StaffProgress = () => {
         const sortedRecords = [...records].sort((a, b) => (periodRank[b.periode] || 0) - (periodRank[a.periode] || 0));
         const latestVal = sortedRecords[0]?.validasi || 0;
 
-        let ppi_old_sum = 0;
-        let minggon_sum = 0;
-        let hasMinggonMonth = false;
-        let hasOldMonth = false;
+
 
         const totals = records.reduce((acc, curr) => {
           const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
