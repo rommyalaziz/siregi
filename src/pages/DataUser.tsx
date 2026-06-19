@@ -107,6 +107,16 @@ const DataUser = () => {
           return { ...acc, plainPassword: plain };
         })
       );
+
+      // Sort alphabetically by branch name (A-Z) by default
+      decryptedAccounts.sort((a, b) => {
+        const nameA = a.cabang?.nama_cabang?.toLowerCase() || '';
+        const nameB = b.cabang?.nama_cabang?.toLowerCase() || '';
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+      });
+
       setAccounts(decryptedAccounts);
 
       // 3. Fetch logs
