@@ -4,6 +4,7 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { Trophy, AlertCircle, Users, ClipboardCheck, TrendingUp, Filter, Activity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ERROR_WEIGHTS, getGradeAndStatus } from './StaffProgress';
 import './Dashboard.css';
 
 const MOCK_TREND_DATA = [
@@ -92,13 +93,6 @@ const Dashboard = () => {
       if (error) throw error;
 
       if (staff) {
-        const calcPts = (val: number, params: any) => {
-          for (const p of params) {
-            if (val >= p.min && val <= p.max) return p.pts;
-          }
-          return 0;
-        };
-
         let errRV = 0, errUP = 0, errRD = 0, errTPC = 0, errSG = 0, errPPI = 0, errVAL = 0, errTP = 0, errLL = 0;
 
         const processedStaff = staff.map(s => {
