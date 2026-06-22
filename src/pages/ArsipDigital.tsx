@@ -4,7 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Drawer } from '../components/Drawer';
 import {
   Search, ArrowUpDown, Eye, Plus, Pencil, Trash2,
-  Loader2, FolderArchive, CheckCircle2, AlertCircle, XCircle
+  Loader2, FolderArchive, CheckCircle2, AlertCircle, XCircle, Trophy, Award, Star
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './TableStyles.css';
@@ -200,6 +200,45 @@ const ArsipDigital = () => {
     return { total, good, warn, bad };
   }, [data]);
 
+  // ── Top Performers ─────────────────────────
+  const topPerformers = useMemo(() => {
+    if (!data || data.length === 0) return { anggota: [], nonKK: [], pencairan: [] };
+
+    // Sort descending for each category and take top 3
+    const anggota = [...data].sort((a, b) => {
+      const pA = b.arsip_anggota?.[0]?.prosentase ?? 0;
+      const pB = a.arsip_anggota?.[0]?.prosentase ?? 0;
+      return pA - pB;
+    }).filter(d => (d.arsip_anggota?.[0]?.prosentase ?? 0) > 0).slice(0, 3).map(d => ({
+      nama_cabang: d.nama_cabang,
+      score: d.arsip_anggota?.[0]?.prosentase ?? 0
+    }));
+
+    const nonKK = [...data].sort((a, b) => {
+      const pA = b.arsip_anggota?.[0]?.toleransi_kk ?? 0;
+      const pB = a.arsip_anggota?.[0]?.toleransi_kk ?? 0;
+      return pA - pB;
+    }).filter(d => (d.arsip_anggota?.[0]?.toleransi_kk ?? 0) > 0).slice(0, 3).map(d => ({
+      nama_cabang: d.nama_cabang,
+      score: d.arsip_anggota?.[0]?.toleransi_kk ?? 0
+    }));
+
+    const pencairan = [...data].sort((a, b) => {
+      const pA = calcPencairanPct(b.arsip_pencairan?.[0] ?? null);
+      const pB = calcPencairanPct(a.arsip_pencairan?.[0] ?? null);
+      return pA - pB;
+    }).filter(d => calcPencairanPct(d.arsip_pencairan?.[0] ?? null) > 0).slice(0, 3).map(d => ({
+      nama_cabang: d.nama_cabang,
+      score: calcPencairanPct(d.arsip_pencairan?.[0] ?? null)
+    }));
+
+    return {
+      anggota,
+      nonKK,
+      pencairan
+    };
+  }, [data]);
+
   // ── PctCell ────────────────────────────────
   const PctCell = ({ pct }: { pct: number }) => {
     const cls = getPctClass(pct);
@@ -247,6 +286,73 @@ const ArsipDigital = () => {
           <li><strong>Arsip Data Anggota NON KK</strong> Perhitungan berdasarkan keseluruhan data anggota aktif, dengan ketentuan anggota yang bergabung sebelum tahun 2025 tidak diperhitungkan. Kelengkapan dokumen wajib 01–08, dengan pengecualian dokumen 02.</li>
           <li><strong>Arsip Pencairan</strong> Perhitungan berdasarkan keseluruhan data pencairan pada periode tahun 2026 sampai dengan 17 Juni 2026.</li>
         </ul>
+      </div>
+
+      {/* Top Performers Strip */}
+      <div className="arsip-top-performers-container">
+        <h3 className="arsip-section-title"><Trophy size={16} /> Cabang Terbaik (Top Performers)</h3>
+        <div className="arsip-top-strip">
+          {/* Anggota */}
+          <div className="arsip-top-card">
+            <div className="arsip-top-icon gold"><Award size={22} /></div>
+            <div className="arsip-top-info">
+              <div className="arsip-top-label">Arsip Data Anggota</div>
+              {topPerformers.anggota.length > 0 ? (
+                <div className="arsip-top-list">
+                  {topPerformers.anggota.map((c, i) => (
+                    <div key={i} className="arsip-top-list-item">
+                      <span className="arsip-top-rank">{i + 1}.</span>
+                      <span className="arsip-top-name">{c.nama_cabang}</span>
+                      <span className="arsip-top-score-sm">{c.score.toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="arsip-top-names empty">-</div>
+              )}
+            </div>
+          </div>
+          {/* Non-KK */}
+          <div className="arsip-top-card">
+            <div className="arsip-top-icon silver"><Star size={22} /></div>
+            <div className="arsip-top-info">
+              <div className="arsip-top-label">Arsip Anggota Non-KK</div>
+              {topPerformers.nonKK.length > 0 ? (
+                <div className="arsip-top-list">
+                  {topPerformers.nonKK.map((c, i) => (
+                    <div key={i} className="arsip-top-list-item">
+                      <span className="arsip-top-rank">{i + 1}.</span>
+                      <span className="arsip-top-name">{c.nama_cabang}</span>
+                      <span className="arsip-top-score-sm">{c.score.toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="arsip-top-names empty">-</div>
+              )}
+            </div>
+          </div>
+          {/* Pencairan */}
+          <div className="arsip-top-card">
+            <div className="arsip-top-icon bronze"><Award size={22} /></div>
+            <div className="arsip-top-info">
+              <div className="arsip-top-label">Arsip Pencairan</div>
+              {topPerformers.pencairan.length > 0 ? (
+                <div className="arsip-top-list">
+                  {topPerformers.pencairan.map((c, i) => (
+                    <div key={i} className="arsip-top-list-item">
+                      <span className="arsip-top-rank">{i + 1}.</span>
+                      <span className="arsip-top-name">{c.nama_cabang}</span>
+                      <span className="arsip-top-score-sm">{c.score.toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="arsip-top-names empty">-</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Strip */}

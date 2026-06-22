@@ -41,6 +41,152 @@
   margin-bottom: 2px;
 }
 
+/* ---------- Top Performers ---------- */
+.arsip-top-performers-container {
+  margin-top: 4px;
+}
+
+.arsip-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--color-text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.arsip-top-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.arsip-top-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%), var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.arsip-top-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.arsip-top-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.arsip-top-icon.gold {
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+  color: #78350F;
+}
+
+.arsip-top-icon.silver {
+  background: linear-gradient(135deg, #E5E7EB 0%, #9CA3AF 100%);
+  color: #1F2937;
+}
+
+.arsip-top-icon.bronze {
+  background: linear-gradient(135deg, #FCD34D 0%, #D97706 100%);
+  color: #78350F;
+}
+
+.arsip-top-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.arsip-top-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.arsip-top-names {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1.2;
+}
+
+.arsip-top-names.empty {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.arsip-top-score {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-success);
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--color-bg-success);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.arsip-top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.arsip-top-list-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.arsip-top-rank {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  width: 14px;
+}
+
+.arsip-top-name {
+  font-weight: 600;
+  color: var(--color-text-main);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arsip-top-score-sm {
+  font-weight: 700;
+  color: var(--color-success);
+  background: var(--color-bg-success);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
 /* ---------- Stats Strip ---------- */
 .arsip-stats-strip {
   display: grid;
@@ -466,7 +612,7 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
-  .arsip-stats-strip      { grid-template-columns: 1fr 1fr; }
+  .arsip-stats-strip, .arsip-top-strip { grid-template-columns: 1fr; }
   .arsip-form-grid,
   .arsip-form-grid.three  { grid-template-columns: 1fr; }
   .arsip-summary-grid     { grid-template-columns: 1fr 1fr; }
