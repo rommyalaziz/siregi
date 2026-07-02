@@ -208,7 +208,7 @@ const ArsipDigitalForm = () => {
         ),
       ]);
 
-      navigate('/arsip-digital');
+      navigate(-1);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Gagal menyimpan data.' });
       setSaving(false);
@@ -235,7 +235,7 @@ const ArsipDigitalForm = () => {
       {/* Header */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn btn-outline" onClick={() => navigate('/arsip-digital')} style={{ padding: '0 10px', height: '34px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button className="btn btn-outline" onClick={() => navigate(-1)} style={{ padding: '0 10px', height: '34px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ArrowLeft size={14} />
             <span>Kembali</span>
           </button>
@@ -422,7 +422,7 @@ const ArsipDigitalForm = () => {
 
       {/* Bottom save bar */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '8px' }}>
-        <button className="btn btn-outline" onClick={() => navigate('/arsip-digital')} disabled={saving}>Batal</button>
+        <button className="btn btn-outline" onClick={() => navigate(-1)} disabled={saving}>Batal</button>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           <span>Simpan Data</span>

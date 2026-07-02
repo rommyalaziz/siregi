@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import { supabase } from '../lib/supabase';
 import './Sidebar.css';
@@ -14,6 +14,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isKpiModalOpen, setIsKpiModalOpen] = React.useState(false);
+
+  // Arsip Digital accordion state
+  const arsipRoutes = ['/arsip-digital/anggota', '/arsip-digital/pencairan', '/arsip-digital/anggota-masuk'];
+  const isArsipActive = arsipRoutes.some(r => location.pathname.startsWith(r));
+  const [arsipOpen, setArsipOpen] = React.useState(isArsipActive);
+  const arsipSubmenuRef = useRef<HTMLDivElement>(null);
+
+  // Keep accordion open if navigating to an arsip route
+  useEffect(() => {
+    if (isArsipActive) setArsipOpen(true);
+  }, [location.pathname]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -133,10 +144,53 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <FileBarChart size={16} />
           <span>Laporan Detail</span>
         </NavLink>
-        <NavLink to="/arsip-digital" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <FolderArchive size={16} />
-          <span>Arsip Digital</span>
-        </NavLink>
+        {/* ── Arsip Digital Accordion ── */}
+        <div className="nav-group">
+          <button
+            className={`nav-item nav-group-trigger ${isArsipActive ? 'active' : ''}`}
+            onClick={() => setArsipOpen(prev => !prev)}
+            aria-expanded={arsipOpen}
+          >
+            <FolderArchive size={16} />
+            <span>Arsip Digital</span>
+            <ChevronDown
+              size={14}
+              className={`nav-chevron ${arsipOpen ? 'nav-chevron--open' : ''}`}
+            />
+          </button>
+
+          <div
+            ref={arsipSubmenuRef}
+            className="nav-submenu"
+            style={{
+              maxHeight: arsipOpen
+                ? `${arsipSubmenuRef.current?.scrollHeight ?? 200}px`
+                : '0px',
+            }}
+          >
+            <NavLink
+              to="/arsip-digital/anggota"
+              className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+            >
+              <FileText size={13} />
+              <span>Arsip Anggota</span>
+            </NavLink>
+            <NavLink
+              to="/arsip-digital/pencairan"
+              className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+            >
+              <CoinIcon size={13} />
+              <span>Arsip Pencairan</span>
+            </NavLink>
+            <NavLink
+              to="/arsip-digital/anggota-masuk"
+              className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+            >
+              <UserCheck size={13} />
+              <span>Arsip Anggota Masuk</span>
+            </NavLink>
+          </div>
+        </div>
         <NavLink to="/mdisgo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <GraduationCap size={16} />
           <span>MDISGO</span>

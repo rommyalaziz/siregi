@@ -81,7 +81,10 @@ function AppContent() {
         <Route path="/admin/log-aktivitas" element={<SuperAdminRoute><LogAktivitas /></SuperAdminRoute>} />
         
         {/* Arsip Digital Module */}
-        <Route path="/arsip-digital" element={<ArsipDigital />} />
+        <Route path="/arsip-digital" element={<Navigate to="/arsip-digital/anggota" replace />} />
+        <Route path="/arsip-digital/anggota" element={<ArsipDigital view="anggota" />} />
+        <Route path="/arsip-digital/pencairan" element={<ArsipDigital view="pencairan" />} />
+        <Route path="/arsip-digital/anggota-masuk" element={<ArsipDigital view="anggota-masuk" />} />
         <Route path="/arsip-digital/tambah" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
         <Route path="/arsip-digital/edit/:id" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
       </Route>

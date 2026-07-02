@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* Font Family */
   --font-family: 'Plus Jakarta Sans', sans-serif;
@@ -105,6 +107,12 @@ a {
 button {
   font-family: inherit;
   cursor: pointer;
+}
+
+/* Only reset border/background on buttons that use legacy .btn or .icon-btn classes */
+button.btn,
+button.icon-btn,
+button.menu-toggle-btn {
   border: none;
   background: none;
 }
@@ -133,16 +141,7 @@ ul {
   transform: translateY(-2px);
 }
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: 4px; }
-.gap-4 { gap: 8px; }
-.gap-6 { gap: 12px; }
-.w-full { width: 100%; }
-.h-full { height: 100%; }
+
 
 /* Buttons */
 .btn {

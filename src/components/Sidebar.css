@@ -234,3 +234,85 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ── Accordion / Nav Group ── */
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Parent trigger button — inherits nav-item but also holds the chevron */
+.nav-group-trigger {
+  justify-content: flex-start;
+  position: relative;
+}
+
+/* Push chevron to the far right */
+.nav-chevron {
+  margin-left: auto;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 250ms ease;
+}
+
+.nav-chevron--open {
+  transform: rotate(180deg);
+  color: #818cf8;
+}
+
+/* Smooth accordion panel */
+.nav-submenu {
+  overflow: hidden;
+  transition: max-height 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;     /* indent relative to parent */
+}
+
+/* Sub-items — smaller, indented, with a left accent line */
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 16px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+
+.nav-subitem svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.nav-subitem:hover {
+  color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-left-color: rgba(99, 102, 241, 0.4);
+}
+
+.nav-subitem:hover svg {
+  opacity: 1;
+}
+
+.nav-subitem.active {
+  color: #a5b4fc;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.04) 100%);
+  border-left-color: #6366f1;
+}
+
+.nav-subitem.active svg {
+  color: #818cf8;
+  opacity: 1;
+}
+
