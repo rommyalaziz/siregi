@@ -97,7 +97,7 @@ const StaffProgress = () => {
             (s.validasi > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi + // Validasi counts as 1 error regardless of count
             (s.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
 
-          const isMinggonMonth = s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+          const isMinggonMonth = Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
           const minggon = isMinggonMonth ? (s.ppi_not_entry || 0) : 0;
           const lainLain = s.lain_lain || 0;
           
@@ -167,7 +167,7 @@ const StaffProgress = () => {
 
 
         const totals = records.reduce((acc, curr) => {
-          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          const isMinggon = Number(curr.tahun) > 2026 || (Number(curr.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
           
           return {
             rv: (acc.rv || 0) + (curr.release_voucher || 0),
@@ -197,7 +197,7 @@ const StaffProgress = () => {
             ((curr.validasi || 0) > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
             (curr.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
             
-          const isMinggon = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          const isMinggon = Number(curr.tahun) > 2026 || (Number(curr.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
           const m_minggon = isMinggon ? (curr.ppi_not_entry || 0) : 0;
           const m_ll = curr.lain_lain || 0;
           
@@ -246,7 +246,7 @@ const StaffProgress = () => {
       s.recalculate_delinquency || 0,
       s.transfer_pencairan || 0,
       s.salah_generate || 0,
-      s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode)) ? (s.ppi_not_entry || 0) : 0, // Now "Minggon"
+      Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode)) ? (s.ppi_not_entry || 0) : 0, // Now "Minggon"
       s.validasi || 0,
       s.tiket_perbaikan || 0,
       s.lain_lain || 0,
@@ -455,7 +455,7 @@ const StaffProgress = () => {
                       <td className="center-text mono" data-label="Transfer Pencairan">{staff.transfer_pencairan === 0 ? '-' : staff.transfer_pencairan}</td>
                       <td className="center-text mono" data-label="Salah Generate">{staff.salah_generate === 0 ? '-' : staff.salah_generate}</td>
                       <td className="center-text mono" data-label="Minggon">
-                        {(staff.tahun > 2026 || (staff.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(staff.periode))) 
+                        {(Number(staff.tahun) > 2026 || (Number(staff.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(staff.periode))) 
                           ? (staff.ppi_not_entry === 0 ? '-' : staff.ppi_not_entry) 
                           : '-'}
                       </td>

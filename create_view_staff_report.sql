@@ -65,12 +65,9 @@ SELECT
   
   -- 6. PPI Not Entry / Minggon (Max 10)
   CASE 
-    -- Aturan baru per Juni 2026: Minggon (1 = 10 pts, 0 = 0 pts)
+    -- Aturan baru per Juni 2026: Minggon (1 hari = 1 poin penambah)
     WHEN (tahun > 2026) OR (tahun = 2026 AND periode IN ('Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember')) THEN
-      CASE 
-        WHEN ppi_not_entry > 0 THEN 10
-        ELSE 0
-      END
+      ppi_not_entry
     -- Aturan lama sebelum Juni 2026: PPI Not Entry (makin besar nilai, makin kecil poin)
     ELSE
       CASE 

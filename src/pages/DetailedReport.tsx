@@ -68,7 +68,7 @@ const DetailedReport = () => {
           acc[curr.id].tp += curr.transfer_pencairan || 0;
           acc[curr.id].sg += curr.salah_generate || 0;
           
-          const isMinggonMonth = curr.tahun > 2026 || (curr.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
+          const isMinggonMonth = Number(curr.tahun) > 2026 || (Number(curr.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(curr.periode));
           
           // Store raw sum for display only for valid Minggon months
           acc[curr.id].ppi += isMinggonMonth ? (curr.ppi_not_entry || 0) : 0; 

@@ -116,7 +116,7 @@ const Dashboard = () => {
             ((s.validasi || 0) > 0 ? 1 : 0) * ERROR_WEIGHTS.validasi +
             (s.tiket_perbaikan || 0) * ERROR_WEIGHTS.tiketPerbaikan;
 
-          const isMinggon = s.tahun > 2026 || (s.tahun === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+          const isMinggon = Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
           const m_minggon = isMinggon ? (s.ppi_not_entry || 0) : 0;
           const m_ll = s.lain_lain || 0;
 
