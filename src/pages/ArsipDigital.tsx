@@ -5,7 +5,7 @@ import {
   Search, ArrowUpDown, Eye, Plus, Pencil, Trash2,
   Loader2, FolderArchive, Trophy, Download, ChevronDown,
   Users, FileText, Banknote, CheckCircle2, AlertTriangle,
-  XCircle, Clock
+  XCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { utils, writeFile } from 'xlsx';
@@ -20,12 +20,17 @@ interface ArsipDigital {
   kode_cabang: string;
   nama_cabang: string;
   tanggal_cek: string | null;
+  tanggal_cek_anggota?: string | null;
+  tanggal_cek_pencairan?: string | null;
+  tanggal_cek_anggota_masuk?: string | null;
   created_at: string;
   updated_at: string;
   arsip_anggota?: ArsipAnggota[];
   arsip_anggota_detail?: ArsipAnggotaDetail[];
   arsip_pencairan?: ArsipPencairan[];
   arsip_pencairan_detail?: ArsipPencairanDetail[];
+  arsip_anggota_masuk?: ArsipAnggotaMasuk[];
+  arsip_anggota_masuk_detail?: ArsipAnggotaMasukDetail[];
 }
 
 interface ArsipAnggota {
@@ -40,7 +45,27 @@ interface ArsipAnggota {
   toleransi_kk: number;
 }
 
+interface ArsipAnggotaMasuk {
+  id: string;
+  arsip_id: string;
+  periode?: string;
+  member: number;
+  lengkap: number;
+  kurang: number;
+  tidak_ditemukan: number;
+  tidak_aktif: number;
+  prosentase: number;
+}
+
 interface ArsipAnggotaDetail {
+  id: string;
+  arsip_id: string;
+  kode_dokumen: string;
+  nama_dokumen: string;
+  jumlah: number;
+}
+
+interface ArsipAnggotaMasukDetail {
   id: string;
   arsip_id: string;
   kode_dokumen: string;
@@ -130,6 +155,21 @@ const formatPeriode = (periodeStr: string | undefined | null) => {
 const calcPencairanPct = (p: ArsipPencairan | null): number => {
   if (!p || p.total_pinjaman === 0) return 0;
   return Math.round((p.arsip_lengkap / p.total_pinjaman) * 10000) / 100;
+};
+
+// Format periode anggota masuk: "YYYY-MM-DD sd YYYY-MM-DD" → "01 Jan - 30 Jun 2026"
+const formatPeriodeAM = (periodeStr: string | undefined | null) => {
+  if (!periodeStr) return '-';
+  const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const fmtD = (s: string) => {
+    try {
+      const dt = new Date(s + 'T00:00:00');
+      return `${String(dt.getDate()).padStart(2,'0')} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+    } catch { return s; }
+  };
+  const parts = periodeStr.split(' sd ');
+  if (parts.length === 2) return `${fmtD(parts[0])} - ${fmtD(parts[1])}`;
+  return periodeStr;
 };
 
 // ─────────────────────────────────────────────
@@ -259,7 +299,9 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
           arsip_anggota (*),
           arsip_anggota_detail (*),
           arsip_pencairan (*),
-          arsip_pencairan_detail (*)
+          arsip_pencairan_detail (*),
+          arsip_anggota_masuk (*),
+          arsip_anggota_masuk_detail (*)
         `)
         .order('created_at', { ascending: false });
 
@@ -275,8 +317,8 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     } finally { setLoading(false); }
   };
 
-  const openAdd  = () => navigate('/arsip-digital/tambah');
-  const openEdit = (item: ArsipDigital) => navigate(`/arsip-digital/edit/${item.id}`);
+  const openAdd  = () => navigate(`/arsip-digital/tambah/${view}`);
+  const openEdit = (item: ArsipDigital) => navigate(`/arsip-digital/edit/${item.id}/${view}`);
 
   const handleDelete = async (item: ArsipDigital) => {
     if (!window.confirm(`Hapus data arsip cabang ${item.nama_cabang}?`)) return;
@@ -301,16 +343,25 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
       const pctB = b.arsip_anggota?.[0]?.prosentase ?? 0;
       const pctNonKkA = a.arsip_anggota?.[0]?.toleransi_kk ?? 0;
       const pctNonKkB = b.arsip_anggota?.[0]?.toleransi_kk ?? 0;
+      const pctMasukA = a.arsip_anggota_masuk?.[0]?.prosentase ?? 0;
+      const pctMasukB = b.arsip_anggota_masuk?.[0]?.prosentase ?? 0;
       const penA = calcPencairanPct(a.arsip_pencairan?.[0] ?? null);
       const penB = calcPencairanPct(b.arsip_pencairan?.[0] ?? null);
 
       if (sortBy === 'anggota_desc') return pctB - pctA;
       if (sortBy === 'non_kk_desc') return pctNonKkB - pctNonKkA;
+      if (sortBy === 'anggota_masuk_desc') return pctMasukB - pctMasukA;
       if (sortBy === 'pencairan_desc') return penB - penA;
       if (sortBy === 'nama_az') return a.nama_cabang.localeCompare(b.nama_cabang);
       if (sortBy === 'tanggal') {
-        const tA = a.tanggal_cek ?? '';
-        const tB = b.tanggal_cek ?? '';
+        const getTgl = (item: ArsipDigital) => {
+          if (view === 'anggota') return item.tanggal_cek_anggota ?? item.tanggal_cek ?? '';
+          if (view === 'pencairan') return item.tanggal_cek_pencairan ?? item.tanggal_cek ?? '';
+          if (view === 'anggota-masuk') return item.tanggal_cek_anggota_masuk ?? item.tanggal_cek ?? '';
+          return item.tanggal_cek ?? '';
+        };
+        const tA = getTgl(a);
+        const tB = getTgl(b);
         return tB.localeCompare(tA);
       }
       return 0;
@@ -350,7 +401,9 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         'No': idx + 1,
         'Kode Cabang': item.kode_cabang,
         'Nama Cabang': item.nama_cabang,
-        'Tanggal Cek': formatDate(item.tanggal_cek),
+        'Tgl Cek (Anggota)': formatDate(item.tanggal_cek_anggota ?? item.tanggal_cek),
+        'Tgl Cek (Anggota Masuk)': formatDate(item.tanggal_cek_anggota_masuk ?? item.tanggal_cek),
+        'Tgl Cek (Pencairan)': formatDate(item.tanggal_cek_pencairan ?? item.tanggal_cek),
         'Arsip Data Anggota (%)': pctAnggota.toFixed(2) + '%',
         'Member': anggota?.member ?? 0,
         'Lengkap (Anggota)': anggota?.lengkap ?? 0,
@@ -382,7 +435,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     const workbook = utils.book_new();
     const wsSummary = utils.json_to_sheet(exportData);
     const baseCols = [
-      { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+      { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
       { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
       { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }
     ];
@@ -400,6 +453,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     const total = data.length;
     const getPct = (d: ArsipDigital) => {
       if (view === 'pencairan') return calcPencairanPct(d.arsip_pencairan?.[0] ?? null);
+      if (view === 'anggota-masuk') return d.arsip_anggota_masuk?.[0]?.prosentase ?? 0;
       return d.arsip_anggota?.[0]?.prosentase ?? 0;
     };
     const good = data.filter(d => getPct(d) >= 85).length;
@@ -412,6 +466,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     if (!data || data.length === 0) return [];
     const getPct = (d: ArsipDigital) => {
       if (view === 'pencairan') return calcPencairanPct(d.arsip_pencairan?.[0] ?? null);
+      if (view === 'anggota-masuk') return d.arsip_anggota_masuk?.[0]?.prosentase ?? 0;
       return d.arsip_anggota?.[0]?.prosentase ?? 0;
     };
     return [...data].sort((a, b) => getPct(b) - getPct(a)).filter(d => getPct(d) > 0).slice(0, 3);
@@ -440,17 +495,18 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     },
     'anggota-masuk': {
       title: 'Arsip Anggota Masuk',
-      description: 'Data arsip anggota yang baru bergabung — Menu ini sedang dalam pengembangan',
+      description: 'Monitoring kelengkapan arsip dokumen seluruh cabang — Data Anggota Masuk',
       sortOptions: [
+        { value: 'anggota_masuk_desc', label: 'Arsip Anggota Masuk (%) Terbesar' },
         { value: 'nama_az', label: 'Nama Cabang A–Z' },
+        { value: 'tanggal', label: 'Tanggal Cek Terbaru' },
       ],
     },
   };
   const { title: pageTitle, description: pageDesc, sortOptions } = viewConfig[view];
 
   // ── Table columns per view ──
-  const isAnggotaMasuk = view === 'anggota-masuk';
-  const colCount = view === 'anggota' ? 7 : view === 'pencairan' ? 16 : 6;
+  const colCount = view === 'anggota' ? 6 : view === 'pencairan' ? 16 : 19;
 
   // ── Toolbar colors per view ──
   const accentColor = view === 'pencairan' ? '#0ea5e9' : '#6366f1';
@@ -476,24 +532,22 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, paddingLeft: '40px' }}>{pageDesc}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {!isAnggotaMasuk && (
-            <button
-              onClick={exportToExcel}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '8px 14px', background: '#fff', color: '#374151',
-                fontSize: '12px', fontWeight: 600, borderRadius: '8px',
-                border: '1px solid #d1d5db', cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontFamily: 'inherit',
-                transition: 'background 0.15s'
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
-            >
-              <Download size={13} />Export Excel
-            </button>
-          )}
-          {isSuperAdmin && !isAnggotaMasuk && (
+          <button
+            onClick={exportToExcel}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', background: '#fff', color: '#374151',
+              fontSize: '12px', fontWeight: 600, borderRadius: '8px',
+              border: '1px solid #d1d5db', cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontFamily: 'inherit',
+              transition: 'background 0.15s'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+          >
+            <Download size={13} />Export Excel
+          </button>
+          {isSuperAdmin && (
             <button
               onClick={openAdd}
               style={{
@@ -513,7 +567,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         </div>
       </div>
 
-      {/* ── Alert ── */}
       {message.text && (
         <div style={{
           padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
@@ -525,43 +578,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         </div>
       )}
 
-      {/* ── Anggota Masuk: empty state ── */}
-      {isAnggotaMasuk ? (
-        <div style={{
-          borderRadius: '12px', border: '2px dashed #e2e8f0', background: '#fafafa',
-          padding: '60px 32px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', textAlign: 'center', gap: '16px'
-        }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '16px',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(99,102,241,0.25)'
-          }}>
-            <Users size={28} color="#fff" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px' }}>
-              Arsip Anggota Masuk
-            </h2>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, maxWidth: '380px', lineHeight: 1.6 }}>
-              Menu ini sedang dalam pengembangan dan akan segera tersedia.
-              Data arsip anggota yang baru bergabung akan ditampilkan di sini.
-            </p>
-          </div>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '6px 14px', borderRadius: '9999px',
-            background: '#f1f5f9', border: '1px solid #e2e8f0',
-            fontSize: '11px', fontWeight: 600, color: '#64748b'
-          }}>
-            <Clock size={12} />
-            Segera Hadir
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* ── Info Accordion ── */}
+      {/* ── Info Accordion ── */}
           <InfoAccordion />
 
           {/* ── KPI Cards ── */}
@@ -660,25 +677,46 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
 
             {/* Table */}
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', textAlign: 'left', fontSize: '13px', color: '#4b5563', borderCollapse: 'collapse' }}>
+              <table style={{
+                width: '100%',
+                minWidth: '1000px',
+                tableLayout: 'fixed', textAlign: 'left',
+                fontSize: view === 'anggota-masuk' ? '11px' : '13px',
+                color: '#4b5563', borderCollapse: 'collapse'
+              }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : '4%', textAlign: 'center' })}>No</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '4%' : '6%' })}>Kode</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '12%' : '20%' })}>Nama Cabang</th>
+                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : view === 'anggota-masuk' ? '2%' : '4%', textAlign: 'center' })}>No</th>
+                    <th style={thStyle({ width: view === 'pencairan' ? '4%' : view === 'anggota-masuk' ? '4%' : '6%' })}>Kode</th>
+                    <th style={thStyle({ width: view === 'pencairan' ? '12%' : view === 'anggota-masuk' ? '10%' : '20%' })}>Nama Cabang</th>
                     {view === 'anggota' && <>
-                      <th style={thStyle({ width: '22%' })}>
+                      <th style={thStyle({ width: '44%' })}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                           <span>Arsip Anggota</span>
                           <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>dok wajib 01–08</span>
                         </div>
                       </th>
-                      <th style={thStyle({ width: '22%' })}>
+                    </>}
+                    {view === 'anggota-masuk' && <>
+                      <th style={thStyle({ width: '8%', textAlign: 'center' })}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                          <span>Arsip Non-KK</span>
-                          <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>anggota mulai 2025</span>
+                          <span>Arsip</span>
+                          <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Anggota Masuk (%)</span>
                         </div>
                       </th>
+                      <th style={thStyle({ width: '10%', background: '#f1f5f9', textAlign: 'center' })}>Periode<br/>Cek</th>
+                      <th style={thStyle({ width: '5%', background: '#e0f2fe', textAlign: 'center' })}>Total<br/>Masuk</th>
+                      <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>Arsip<br/>Lengkap</th>
+                      <th style={thStyle({ width: '5%', background: '#fef9c3', textAlign: 'center' })}>File<br/>Kurang</th>
+                      <th style={thStyle({ width: '5%', background: '#fee2e2', textAlign: 'center' })}>Tdk<br/>Ditemukan</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>01<br/>KTP</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>02<br/>KK</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>03<br/>PPI</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>04<br/>UK</th>
+                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>05<br/>Keangg.</th>
+                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>06<br/>Pengaj.</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>07<br/>Akad</th>
+                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>08<br/>Monitor.</th>
                     </>}
                     {view === 'pencairan' && (
                       <>
@@ -700,8 +738,8 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                         <th style={thStyle({ width: '6%', background: '#dcfce7', textAlign: 'center' })}>10 -<br/>Lainnya</th>
                       </>
                     )}
-                    <th style={thStyle({ width: view === 'pencairan' ? '6%' : '14%', whiteSpace: 'nowrap' })}>Tgl Cek</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : '12%', textAlign: 'center' })}>Aksi</th>
+                    <th style={thStyle({ width: view === 'pencairan' ? '6%' : view === 'anggota-masuk' ? '5%' : '14%', whiteSpace: 'nowrap' })}>Tgl Cek</th>
+                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : view === 'anggota-masuk' ? '5%' : '12%', textAlign: 'center' })}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -726,8 +764,9 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                   ) : processedData.map((item, idx) => {
                     const anggota = item.arsip_anggota?.[0];
                     const pencairan = item.arsip_pencairan?.[0];
+                    const anggotaMasuk = item.arsip_anggota_masuk?.[0];
                     const pctAnggota = anggota?.prosentase ?? 0;
-                    const pctNonKk = anggota?.toleransi_kk ?? 0;
+                    const pctMasuk = anggotaMasuk?.prosentase ?? 0;
                     const pctPencairan = calcPencairanPct(pencairan ?? null);
                     const isEven = idx % 2 === 0;
                     return (
@@ -741,11 +780,51 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                         <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: '#334155', fontSize: '12px', fontWeight: 700 }}>{item.kode_cabang}</td>
                         <td style={{ padding: '6px 8px', fontWeight: 800, color: '#020617', fontSize: '12px' }}>{item.nama_cabang}</td>
                         {view === 'anggota' && <>
-                          <td style={{ padding: '6px 8px' }}><MetricCell value={pctAnggota} /></td>
-                          <td style={{ padding: '6px 8px' }}><MetricCell value={pctNonKk} /></td>
+                          <td style={{ padding: '4px 6px' }}><MetricCell value={pctAnggota} /></td>
                         </>}
+                        {view === 'anggota-masuk' && (() => {
+                          const getMD = (k: string) => item.arsip_anggota_masuk_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                          const renderMDVal = (kode: string) => {
+                            const val = getMD(kode);
+                            if (val === 0) return <span className="arsip-zero-badge" title="Clear">✓ 0</span>;
+                            return <span className="arsip-nonzero-val">{val}</span>;
+                          };
+                          return (
+                            <>
+                              <td style={{ padding: '4px 6px' }}><MetricCell value={pctMasuk} /></td>
+                              <td style={{ padding: '4px 6px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569' }}>
+                                {formatPeriodeAM(anggotaMasuk?.periode)}
+                              </td>
+                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#1e293b' }}>{anggotaMasuk?.member ?? 0}</td>
+                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#15803d' }}>{anggotaMasuk?.lengkap ?? 0}</td>
+                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#d97706' }}>{anggotaMasuk?.kurang ?? 0}</td>
+                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#dc2626' }}>{anggotaMasuk?.tidak_ditemukan ?? 0}</td>
+                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('01')}</td>
+                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('02')}</td>
+                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('03')}</td>
+                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('04')}</td>
+                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('05')}</td>
+                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('06')}</td>
+                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('07')}</td>
+                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('08')}</td>
+                            </>
+                          );
+                        })()}
                         {view === 'pencairan' && (() => {
                           const getDoc = (k: string) => item.arsip_pencairan_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                          // Helper: render nilai per kolom arsip dengan badge jika 0
+                          const renderArsipVal = (kode: string) => {
+                            const val = getDoc(kode);
+                            if (val === 0) {
+                              return (
+                                <span className="arsip-zero-badge" title="Clear — tidak ada tunggakan">
+                                  ✓ 0
+                                </span>
+                              );
+                            }
+                            return <span className="arsip-nonzero-val">{val}</span>;
+                          };
+
                           return (
                             <>
                               <td style={{ padding: '6px 8px' }}><MetricCell value={pctPencairan} /></td>
@@ -756,15 +835,50 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                               <td style={{ padding: '6px 8px', fontWeight: 600, color: '#15803d', textAlign: 'center' }}>{pencairan?.arsip_lengkap ?? 0}</td>
                               <td style={{ padding: '6px 8px', fontWeight: 600, color: '#f59e0b', textAlign: 'center' }}>{pencairan?.nama_file_tidak_sesuai ?? 0}</td>
                               <td style={{ padding: '6px 8px', fontWeight: 600, color: '#ef4444', textAlign: 'center' }}>{pencairan?.file_tidak_lengkap ?? 0}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{getDoc('03')}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{getDoc('06')}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{getDoc('07')}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{getDoc('08')}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{getDoc('10')}</td>
+                              {/* ── Kolom 03 PPI ── */}
+                              <td
+                                className={getDoc('03') === 0 ? 'clear-arsip-cell' : undefined}
+                                style={{ padding: '6px 8px', textAlign: 'center' }}
+                              >
+                                {renderArsipVal('03')}
+                              </td>
+                              {/* ── Kolom 06 Pengajuan ── */}
+                              <td
+                                className={getDoc('06') === 0 ? 'clear-arsip-cell' : undefined}
+                                style={{ padding: '6px 8px', textAlign: 'center' }}
+                              >
+                                {renderArsipVal('06')}
+                              </td>
+                              {/* ── Kolom 07 Akad ── */}
+                              <td
+                                className={getDoc('07') === 0 ? 'clear-arsip-cell' : undefined}
+                                style={{ padding: '6px 8px', textAlign: 'center' }}
+                              >
+                                {renderArsipVal('07')}
+                              </td>
+                              {/* ── Kolom 08 Monitoring ── */}
+                              <td
+                                style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}
+                              >
+                                {getDoc('08')}
+                              </td>
+                              {/* ── Kolom 10 Lainnya ── */}
+                              <td
+                                className={getDoc('10') === 0 ? 'clear-arsip-cell' : undefined}
+                                style={{ padding: '6px 8px', textAlign: 'center' }}
+                              >
+                                {renderArsipVal('10')}
+                              </td>
                             </>
                           );
                         })()}
-                        <td style={{ padding: '6px 8px', color: '#64748b', fontSize: '11px' }}>{formatDate(item.tanggal_cek)}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b', fontSize: '11px' }}>
+                          {formatDate(
+                            view === 'anggota' ? (item.tanggal_cek_anggota ?? item.tanggal_cek) :
+                            view === 'pencairan' ? (item.tanggal_cek_pencairan ?? item.tanggal_cek) :
+                            (item.tanggal_cek_anggota_masuk ?? item.tanggal_cek)
+                          )}
+                        </td>
                         <td style={{ padding: '6px 8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
                             <ActionBtn onClick={() => { setDrawerItem(item); setDrawerOpen(true); }} title="Detail" hoverColor="#6366f1">
@@ -787,19 +901,17 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
               </table>
             </div>
           </div>
-        </>
-      )}
-
       {/* ── Detail Drawer ── */}
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={`Detail Arsip — ${drawerItem?.nama_cabang ?? ''}`}>
         {drawerItem && (() => {
           const ang = drawerItem.arsip_anggota?.[0];
           const pen = drawerItem.arsip_pencairan?.[0];
+          const angMasuk = drawerItem.arsip_anggota_masuk?.[0];
           const pctAng = ang?.prosentase ?? 0;
-          const pctNonKk = ang?.toleransi_kk ?? 0;
+          const pctMasuk = angMasuk?.prosentase ?? 0;
           const pctPen = calcPencairanPct(pen ?? null);
           const clsAng = getPctClass(pctAng);
-          const clsNonKk = getPctClass(pctNonKk);
+          const clsMasuk = getPctClass(pctMasuk);
           const clsPen = getPctClass(pctPen);
 
           const ScoreBar = ({ pct, cls, label }: { pct: number; cls: string; label: string }) => (
@@ -824,11 +936,10 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                 <span>Tgl Cek: <strong style={{ color: 'var(--color-text-main)' }}>{formatDate(drawerItem.tanggal_cek)}</strong></span>
               </div>
 
-              {/* Section 1: Arsip Anggota */}
+              {/* Section 1: Arsip Data Anggota */}
               <div className="arsip-detail-section">
                 <div className="arsip-detail-section-title">1. Arsip Data Anggota</div>
                 <ScoreBar pct={pctAng} cls={clsAng} label="Prosentase Kelengkapan" />
-                <ScoreBar pct={pctNonKk} cls={clsNonKk} label="Non-KK (Anggota mulai 2025)" />
                 <div className="arsip-summary-grid">
                   {[
                     { label: 'Member', val: ang?.member, color: '' },
@@ -852,6 +963,60 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                       <thead><tr><th>Kode</th><th>Nama Dokumen</th><th style={{ textAlign: 'right' }}>Jumlah Kurang</th></tr></thead>
                       <tbody>
                         {drawerItem.arsip_anggota_detail!
+                          .sort((a, b) => a.kode_dokumen.localeCompare(b.kode_dokumen))
+                          .map(d => (
+                          <tr key={d.id}>
+                            <td className="mono">{d.kode_dokumen}</td>
+                            <td>{d.nama_dokumen}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: d.jumlah > 0 ? 'var(--color-danger)' : 'inherit' }}>
+                              {d.jumlah}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
+
+              {/* Section 2: Arsip Anggota Masuk */}
+              <div className="arsip-detail-section" style={{ marginTop: '16px' }}>
+                <div className="arsip-detail-section-title">2. Arsip Anggota Masuk</div>
+                <ScoreBar pct={pctMasuk} cls={clsMasuk} label="Prosentase Kelengkapan" />
+                {angMasuk?.periode && (() => {
+                  // Format periode dari "YYYY-MM-DD sd YYYY-MM-DD" ke "01 Jan - 30 Jun 2026"
+                  const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                  const fmtD = (s: string) => { try { const dt = new Date(s + 'T00:00:00'); return `${String(dt.getDate()).padStart(2,'0')} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`; } catch { return s; } };
+                  const parts = angMasuk.periode.split(' sd ');
+                  const labelPeriode = parts.length === 2 ? `${fmtD(parts[0])} - ${fmtD(parts[1])}` : angMasuk.periode;
+                  return (
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '10px' }}>
+                      Periode Cek: <strong style={{ color: 'var(--color-text-main)' }}>{labelPeriode}</strong>
+                    </div>
+                  );
+                })()}
+                <div className="arsip-summary-grid">
+                  {[
+                    { label: 'Anggota Masuk', val: angMasuk?.member, color: '' },
+                    { label: 'Lengkap', val: angMasuk?.lengkap, color: 's-green' },
+                    { label: 'Kurang', val: angMasuk?.kurang, color: 's-yellow' },
+                    { label: 'Tdk Ditemukan', val: angMasuk?.tidak_ditemukan, color: 's-red' },
+                  ].map(({ label, val, color }) => (
+                    <div key={label} className={`arsip-summary-item ${color}`}>
+                      <div className="s-label">{label}</div>
+                      <div className="s-value">{val?.toLocaleString() ?? '-'}</div>
+                    </div>
+                  ))}
+                </div>
+                {(drawerItem.arsip_anggota_masuk_detail?.length ?? 0) > 0 && (
+                  <>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '12px' }}>
+                      Detail Dokumen Anggota Masuk (Kurang)
+                    </div>
+                    <table className="arsip-detail-doc-table">
+                      <thead><tr><th>Kode</th><th>Nama Dokumen</th><th style={{ textAlign: 'right' }}>Jumlah Kurang</th></tr></thead>
+                      <tbody>
+                        {drawerItem.arsip_anggota_masuk_detail!
                           .sort((a, b) => a.kode_dokumen.localeCompare(b.kode_dokumen))
                           .map(d => (
                             <tr key={d.id}>

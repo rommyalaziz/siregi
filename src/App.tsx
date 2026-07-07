@@ -85,8 +85,8 @@ function AppContent() {
         <Route path="/arsip-digital/anggota" element={<ArsipDigital view="anggota" />} />
         <Route path="/arsip-digital/pencairan" element={<ArsipDigital view="pencairan" />} />
         <Route path="/arsip-digital/anggota-masuk" element={<ArsipDigital view="anggota-masuk" />} />
-        <Route path="/arsip-digital/tambah" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
-        <Route path="/arsip-digital/edit/:id" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
+        <Route path="/arsip-digital/tambah/:type" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
+        <Route path="/arsip-digital/edit/:id/:type" element={<AdminRoute><ArsipDigitalForm /></AdminRoute>} />
       </Route>
 
       {/* Catch all redirect to login */}

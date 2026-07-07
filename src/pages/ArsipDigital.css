@@ -610,6 +610,42 @@
   border: 1px solid var(--color-danger);
 }
 
+/* ---------- Clear Arsip Indicator ---------- */
+/* Badge per-sel: tampil apabila nilai kolom = 0 */
+
+/* Badge hijau solid untuk nilai 0 */
+.arsip-zero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background-color: #16a34a;   /* green-600 solid */
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(22, 163, 74, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.arsip-zero-badge:hover {
+  transform: scale(1.07);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.5);
+}
+
+/* Sel yang mengandung badge: background lebih visible */
+.clear-arsip-cell {
+  background-color: #f0fdf4 !important;
+}
+
+/* Nilai non-zero pada kolom arsip tampil merah tegas */
+.arsip-nonzero-val {
+  color: #dc2626;
+  font-weight: 700;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
   .arsip-stats-strip, .arsip-top-strip { grid-template-columns: 1fr; }
