@@ -131,45 +131,34 @@ const formatPeriode = (periodeStr: string | undefined | null) => {
   const parts = periodeStr.split(' sd ');
   if (parts.length !== 2) return periodeStr.replace(' sd ', ' - ');
   
-  const parseDate = (d: string) => {
-    const [dd, mm, yyyy] = d.split('-');
-    return { dd: parseInt(dd), mm: parseInt(mm), yyyy: parseInt(yyyy) };
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  
+  const parsePart = (d: string) => {
+    // Cek format DD-MM-YYYY
+    const dmyMatch = d.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (dmyMatch) {
+      return `${dmyMatch[1]} ${MONTHS[parseInt(dmyMatch[2], 10) - 1]} ${dmyMatch[3]}`;
+    }
+    // Cek format YYYY-MM-DD
+    const ymdMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (ymdMatch) {
+      return `${ymdMatch[3]} ${MONTHS[parseInt(ymdMatch[2], 10) - 1]} ${ymdMatch[1]}`;
+    }
+    // Fallback Date parsing
+    try {
+      const dt = new Date(d + 'T00:00:00');
+      if (!isNaN(dt.getTime())) return `${String(dt.getDate()).padStart(2,'0')} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+    } catch {}
+    
+    return d;
   };
-  
-  const d1 = parseDate(parts[0]);
-  const d2 = parseDate(parts[1]);
-  if (!d1.dd || !d2.dd) return periodeStr.replace(' sd ', ' - ');
-  
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Juni', 'Juli', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const m1 = months[d1.mm - 1];
-  const m2 = months[d2.mm - 1];
-  
-  const formatDd = (d: number) => d.toString().padStart(2, '0');
-  
-  if (d1.yyyy === d2.yyyy) {
-    return `${formatDd(d1.dd)} ${m1} - ${formatDd(d2.dd)} ${m2} ${d2.yyyy}`;
-  }
-  return `${formatDd(d1.dd)} ${m1} ${d1.yyyy} - ${formatDd(d2.dd)} ${m2} ${d2.yyyy}`;
+
+  return `${parsePart(parts[0])} - ${parsePart(parts[1])}`;
 };
 
 const calcPencairanPct = (p: ArsipPencairan | null): number => {
   if (!p || p.total_pinjaman === 0) return 0;
   return Math.round((p.arsip_lengkap / p.total_pinjaman) * 10000) / 100;
-};
-
-// Format periode anggota masuk: "YYYY-MM-DD sd YYYY-MM-DD" → "01 Jan - 30 Jun 2026"
-const formatPeriodeAM = (periodeStr: string | undefined | null) => {
-  if (!periodeStr) return '-';
-  const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  const fmtD = (s: string) => {
-    try {
-      const dt = new Date(s + 'T00:00:00');
-      return `${String(dt.getDate()).padStart(2,'0')} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
-    } catch { return s; }
-  };
-  const parts = periodeStr.split(' sd ');
-  if (parts.length === 2) return `${fmtD(parts[0])} - ${fmtD(parts[1])}`;
-  return periodeStr;
 };
 
 // ─────────────────────────────────────────────
@@ -793,7 +782,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                             <>
                               <td style={{ padding: '4px 6px' }}><MetricCell value={pctMasuk} /></td>
                               <td style={{ padding: '4px 6px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569' }}>
-                                {formatPeriodeAM(anggotaMasuk?.periode)}
+                                {formatPeriode(anggotaMasuk?.periode)}
                               </td>
                               <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#1e293b' }}>{anggotaMasuk?.member ?? 0}</td>
                               <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#15803d' }}>{anggotaMasuk?.lengkap ?? 0}</td>

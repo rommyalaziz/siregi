@@ -289,9 +289,19 @@ const ArsipDigitalForm = () => {
         const { error } = await supabase.from('arsip_digital').update(arsipPayload).eq('id', id);
         if (error) throw error;
         arsipId = id;
-        if (formType === 'anggota') await Promise.all([supabase.from('arsip_anggota').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_detail').delete().eq('arsip_id', arsipId)]);
-        if (formType === 'anggota-masuk') await Promise.all([supabase.from('arsip_anggota_masuk').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_masuk_detail').delete().eq('arsip_id', arsipId)]);
-        if (formType === 'pencairan') await Promise.all([supabase.from('arsip_pencairan').delete().eq('arsip_id', arsipId), supabase.from('arsip_pencairan_detail').delete().eq('arsip_id', arsipId)]);
+        
+        if (formType === 'anggota') {
+          const [d1, d2] = await Promise.all([supabase.from('arsip_anggota').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_detail').delete().eq('arsip_id', arsipId)]);
+          if (d1.error) throw d1.error; if (d2.error) throw d2.error;
+        }
+        if (formType === 'anggota-masuk') {
+          const [d1, d2] = await Promise.all([supabase.from('arsip_anggota_masuk').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_masuk_detail').delete().eq('arsip_id', arsipId)]);
+          if (d1.error) throw d1.error; if (d2.error) throw d2.error;
+        }
+        if (formType === 'pencairan') {
+          const [d1, d2] = await Promise.all([supabase.from('arsip_pencairan').delete().eq('arsip_id', arsipId), supabase.from('arsip_pencairan_detail').delete().eq('arsip_id', arsipId)]);
+          if (d1.error) throw d1.error; if (d2.error) throw d2.error;
+        }
       } else {
         const { data: nr, error } = await supabase.from('arsip_digital').insert([arsipPayload]).select().single();
         if (error) throw error;
@@ -325,7 +335,9 @@ const ArsipDigitalForm = () => {
       }
       navigate(-1);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan.' });
+      console.error("Save Error:", err);
+      const errMsg = err?.message || err?.details || err?.hint || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      setMessage({ type: 'error', text: `Gagal menyimpan: ${errMsg}` });
       setSaving(false);
     }
   };
