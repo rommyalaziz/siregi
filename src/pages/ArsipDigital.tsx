@@ -668,7 +668,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
             <div style={{ overflowX: 'auto' }}>
               <table style={{
                 width: '100%',
-                minWidth: '1000px',
+                minWidth: view === 'anggota-masuk' ? '1150px' : '1000px',
                 tableLayout: 'fixed', textAlign: 'left',
                 fontSize: view === 'anggota-masuk' ? '11px' : '13px',
                 color: '#4b5563', borderCollapse: 'collapse'
@@ -687,13 +687,13 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                       </th>
                     </>}
                     {view === 'anggota-masuk' && <>
-                      <th style={thStyle({ width: '8%', textAlign: 'center' })}>
+                      <th style={thStyle({ width: '12%', textAlign: 'center' })}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                           <span>Arsip</span>
                           <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Anggota Masuk (%)</span>
                         </div>
                       </th>
-                      <th style={thStyle({ width: '10%', background: '#f1f5f9', textAlign: 'center' })}>Periode<br/>Cek</th>
+                      <th style={thStyle({ width: '14%', background: '#f1f5f9', textAlign: 'center' })}>Periode<br/>Cek</th>
                       <th style={thStyle({ width: '5%', background: '#e0f2fe', textAlign: 'center' })}>Total<br/>Masuk</th>
                       <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>Arsip<br/>Lengkap</th>
                       <th style={thStyle({ width: '5%', background: '#fef9c3', textAlign: 'center' })}>File<br/>Kurang</th>
@@ -702,10 +702,10 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                       <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>02<br/>KK</th>
                       <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>03<br/>PPI</th>
                       <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>04<br/>UK</th>
-                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>05<br/>Keangg.</th>
-                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>06<br/>Pengaj.</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>05<br/>Keangg.</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>06<br/>Pengaj.</th>
                       <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>07<br/>Akad</th>
-                      <th style={thStyle({ width: '5%', background: '#f0fdf4', textAlign: 'center' })}>08<br/>Monitor.</th>
+                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>08<br/>Monitor.</th>
                     </>}
                     {view === 'pencairan' && (
                       <>
