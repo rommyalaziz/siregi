@@ -297,23 +297,31 @@ const ArsipDigitalForm = () => {
         if (error) throw error;
         arsipId = nr.id;
       }
-      if (formType === 'anggota') await Promise.all([
-        supabase.from('arsip_anggota').insert([{ arsip_id: arsipId, member: Number(member)||0, lengkap: Number(lengkap)||0, kurang: Number(kurang)||0, tidak_ditemukan: Number(tidakDitemukan)||0, tidak_aktif: Number(tidakAktif)||0, prosentase: Number(prosentase)||0, toleransi_kk: 0 }]),
-        supabase.from('arsip_anggota_detail').insert(anggotaDocs.map(d => ({ arsip_id: arsipId, kode_dokumen: d.kode_dokumen, nama_dokumen: d.nama_dokumen, jumlah: Number(d.jumlah)||0 }))),
-      ]);
+      if (formType === 'anggota') {
+        const [r1, r2] = await Promise.all([
+          supabase.from('arsip_anggota').insert([{ arsip_id: arsipId, member: Number(member)||0, lengkap: Number(lengkap)||0, kurang: Number(kurang)||0, tidak_ditemukan: Number(tidakDitemukan)||0, tidak_aktif: Number(tidakAktif)||0, prosentase: Number(prosentase)||0, toleransi_kk: 0 }]),
+          supabase.from('arsip_anggota_detail').insert(anggotaDocs.map(d => ({ arsip_id: arsipId, kode_dokumen: d.kode_dokumen, nama_dokumen: d.nama_dokumen, jumlah: Number(d.jumlah)||0 }))),
+        ]);
+        if (r1.error) throw r1.error;
+        if (r2.error) throw r2.error;
+      }
       if (formType === 'anggota-masuk') {
         const periodeAMVal = periodeAMFrom && periodeAMTo ? `${periodeAMFrom} sd ${periodeAMTo}` : (periodeAMFrom || '');
-        await Promise.all([
-          supabase.from('arsip_anggota_masuk').insert([{ arsip_id: arsipId, periode: periodeAMVal, member: Number(mMasuk)||0, lengkap: Number(lMasuk)||0, kurang: Number(kMasuk)||0, tidak_ditemukan: Number(tdMasuk)||0, tidak_aktif: 0, prosentase: Number(pctMasuk)||0 }]),
+        const [r1, r2] = await Promise.all([
+          supabase.from('arsip_anggota_masuk').insert([{ arsip_id: arsipId, periode: periodeAMVal, member: Number(mMasuk)||0, lengkap: Number(lMasuk)||0, kurang: Number(kMasuk)||0, tidak_ditemukan: Number(tdMasuk)||0, prosentase: Number(pctMasuk)||0 }]),
           supabase.from('arsip_anggota_masuk_detail').insert(masukDocs.map(d => ({ arsip_id: arsipId, kode_dokumen: d.kode_dokumen, nama_dokumen: d.nama_dokumen, jumlah: Number(d.jumlah)||0 }))),
         ]);
+        if (r1.error) throw r1.error;
+        if (r2.error) throw r2.error;
       }
       if (formType === 'pencairan') {
         const periodePenVal = periodePencairanFrom && periodePencairanTo ? `${periodePencairanFrom} sd ${periodePencairanTo}` : (periodePencairanFrom || '');
-        await Promise.all([
+        const [r1, r2] = await Promise.all([
           supabase.from('arsip_pencairan').insert([{ arsip_id: arsipId, periode: periodePenVal, total_pinjaman: Number(totalPinjaman)||0, arsip_lengkap: Number(arsipLengkap)||0, nama_file_tidak_sesuai: Number(namaFileTS)||0, file_tidak_lengkap: Number(fileTL)||0 }]),
           supabase.from('arsip_pencairan_detail').insert(pencairanDocs.map(d => ({ arsip_id: arsipId, kode_dokumen: d.kode_dokumen, nama_dokumen: d.nama_dokumen, jumlah: Number(d.jumlah)||0 }))),
         ]);
+        if (r1.error) throw r1.error;
+        if (r2.error) throw r2.error;
       }
       navigate(-1);
     } catch (err: any) {
