@@ -615,6 +615,7 @@
   border: 1px solid var(--color-border);
   line-height: 1.5;
   min-height: 40px;
+  white-space: pre-wrap;
 }
 .kj-detail-checklist-row {
   display: flex;

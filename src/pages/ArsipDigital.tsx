@@ -98,22 +98,10 @@ type StatusType = 'good' | 'warn' | 'bad';
 // ─────────────────────────────────────────────
 const getStatus = (pct: number): StatusType => pct >= 85 ? 'good' : pct >= 70 ? 'warn' : 'bad';
 
-const getStatusColor = (status: StatusType) => {
-  if (status === 'good') return 'text-green-600 bg-green-50 border-green-200';
-  if (status === 'warn') return 'text-amber-600 bg-amber-50 border-amber-200';
-  return 'text-red-600 bg-red-50 border-red-200';
-};
-
 const getBarColor = (status: StatusType) => {
   if (status === 'good') return '#22c55e';
   if (status === 'warn') return '#f59e0b';
   return '#ef4444';
-};
-
-const getStatusLabel = (status: StatusType) => {
-  if (status === 'good') return 'Baik';
-  if (status === 'warn') return 'Perhatian';
-  return 'Tindak Lanjut';
 };
 
 const getPctClass = (pct: number) =>
@@ -185,8 +173,8 @@ const InfoAccordion = () => {
       {isOpen && (
         <div style={{ padding: '14px 16px', borderTop: '1px solid #e5e7eb', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           {[
-            { label: 'Arsip Data Anggota', color: '#6366f1', desc: 'Keseluruhan data anggota aktif. Kelengkapan dokumen wajib 01–08.' },
-            { label: 'Arsip Anggota (Non-KK)', color: '#6366f1', desc: 'Anggota aktif bergabung mulai 2025. Wajib dok 01–08, kecuali dok 02.' },
+            { label: 'Arsip Data Anggota', color: '#6366f1', desc: 'Keseluruhan data anggota aktif. Kelengkapan dokumen wajib 01–11.' },
+            { label: 'Arsip Anggota (Non-KK)', color: '#6366f1', desc: 'Anggota aktif bergabung mulai 2025. Wajib dok 01–11, kecuali dok 02.' },
             { label: 'Arsip Pencairan', color: '#0ea5e9', desc: 'Data pencairan tahun 2026 s.d. 17 Juni 2026.' },
           ].map(item => (
             <div key={item.label} style={{ padding: '10px 12px', borderRadius: '6px', background: '#f8fafc', borderLeft: `3px solid ${item.color}` }}>
@@ -200,23 +188,27 @@ const InfoAccordion = () => {
   );
 };
 
-/** Reusable metric badge + progress bar cell */
+/** Reusable metric badge + progress bar cell — stacked vertically for consistent alignment */
 const MetricCell = ({ value, label }: { value: number; label?: string }) => {
   const status = getStatus(value);
   const barColor = getBarColor(status);
-  const badgeClass = getStatusColor(status);
-  const badgeLabel = getStatusLabel(status);
+  // Label tidak perlu disingkat lagi karena sudah vertical stack
+  const badgeShort = status === 'good' ? 'Baik' : status === 'warn' ? 'Perhatian' : 'Tindak Lanjut';
+  const badgeBg = status === 'good' ? '#dcfce7' : status === 'warn' ? '#fef9c3' : '#fee2e2';
+  const badgeFg = status === 'good' ? '#15803d' : status === 'warn' ? '#92400e' : '#b91c1c';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-      {label && <div style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</div>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontWeight: 700, fontSize: '12px', color: '#111827', whiteSpace: 'nowrap' }}>{value.toFixed(2)}%</span>
-        <span
-          className={badgeClass}
-          style={{ padding: '1px 6px', borderRadius: '9999px', fontSize: '9px', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid', lineHeight: 1.4 }}
-        >{badgeLabel}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+      {label && <div style={{ fontSize: '8px', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{label}</div>}
+      {/* Percentage — always centered on its own line */}
+      <div style={{ fontWeight: 700, fontSize: '11px', color: '#111827', lineHeight: 1, whiteSpace: 'nowrap', textAlign: 'center' }}>
+        {value.toFixed(2)}%
       </div>
-      <div style={{ width: '100%', background: '#f1f5f9', borderRadius: '9999px', height: '3px', overflow: 'hidden' }}>
+      {/* Badge — below the percentage */}
+      <div style={{ padding: '0 4px', borderRadius: '3px', fontSize: '8px', fontWeight: 700, whiteSpace: 'nowrap', lineHeight: '12px', height: '12px', display: 'inline-flex', alignItems: 'center', background: badgeBg, color: badgeFg }}>
+        {badgeShort}
+      </div>
+      {/* Progress bar */}
+      <div style={{ width: '85px', background: '#f1f5f9', borderRadius: '9999px', height: '4px', overflow: 'hidden' }}>
         <div style={{ height: '100%', borderRadius: '9999px', width: `${Math.min(value, 100)}%`, background: barColor, transition: 'width 0.7s ease-out' }} />
       </div>
     </div>
@@ -258,7 +250,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
   const defaultSort: Record<ArsipView, string> = {
     anggota: 'anggota_desc',
     pencairan: 'pencairan_desc',
-    'anggota-masuk': 'nama_az',
+    'anggota-masuk': 'anggota_masuk_desc',
   };
   const [sortBy, setSortBy] = useState<string>(defaultSort[view]);
 
@@ -495,7 +487,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
   const { title: pageTitle, description: pageDesc, sortOptions } = viewConfig[view];
 
   // ── Table columns per view ──
-  const colCount = view === 'anggota' ? 6 : view === 'pencairan' ? 16 : 19;
+  const colCount = view === 'anggota' ? 23 : view === 'pencairan' ? 16 : 19;
 
   // ── Toolbar colors per view ──
   const accentColor = view === 'pencairan' ? '#0ea5e9' : '#6366f1';
@@ -587,7 +579,9 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                 {topPerformers.length > 0 ? topPerformers.map((item, idx) => {
                   const pct = view === 'pencairan'
                     ? calcPencairanPct(item.arsip_pencairan?.[0] ?? null)
-                    : (item.arsip_anggota?.[0]?.prosentase ?? 0);
+                    : view === 'anggota-masuk'
+                      ? (item.arsip_anggota_masuk?.[0]?.prosentase ?? 0)
+                      : (item.arsip_anggota?.[0]?.prosentase ?? 0);
                   const medals = ['🥇', '🥈', '🥉'];
                   return (
                     <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -665,71 +659,128 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: 'auto' }}>
+            <div className="arsip-table-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
               <table style={{
-                width: '100%',
-                minWidth: view === 'anggota-masuk' ? '1150px' : '1000px',
-                tableLayout: 'fixed', textAlign: 'left',
-                fontSize: view === 'anggota-masuk' ? '11px' : '13px',
-                color: '#4b5563', borderCollapse: 'collapse'
+                width: 'max-content',
+                minWidth: '100%',
+                tableLayout: 'fixed',
+                textAlign: 'left',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
+                fontSize: '11px',
+                color: '#4b5563'
               }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc' }}>
-                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : view === 'anggota-masuk' ? '2%' : '4%', textAlign: 'center' })}>No</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '4%' : view === 'anggota-masuk' ? '4%' : '6%' })}>Kode</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '12%' : view === 'anggota-masuk' ? '10%' : '20%' })}>Nama Cabang</th>
-                    {view === 'anggota' && <>
-                      <th style={thStyle({ width: '44%' })}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                          <span>Arsip Anggota</span>
-                          <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>dok wajib 01–08</span>
-                        </div>
-                      </th>
-                    </>}
-                    {view === 'anggota-masuk' && <>
-                      <th style={thStyle({ width: '12%', textAlign: 'center' })}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                          <span>Arsip</span>
-                          <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Anggota Masuk (%)</span>
-                        </div>
-                      </th>
-                      <th style={thStyle({ width: '14%', background: '#f1f5f9', textAlign: 'center' })}>Periode<br/>Cek</th>
-                      <th style={thStyle({ width: '5%', background: '#e0f2fe', textAlign: 'center' })}>Total<br/>Masuk</th>
-                      <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>Arsip<br/>Lengkap</th>
-                      <th style={thStyle({ width: '5%', background: '#fef9c3', textAlign: 'center' })}>File<br/>Kurang</th>
-                      <th style={thStyle({ width: '5%', background: '#fee2e2', textAlign: 'center' })}>Tdk<br/>Ditemukan</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>01<br/>KTP</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>02<br/>KK</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>03<br/>PPI</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>04<br/>UK</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>05<br/>Keangg.</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>06<br/>Pengaj.</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>07<br/>Akad</th>
-                      <th style={thStyle({ width: '4%', background: '#f0fdf4', textAlign: 'center' })}>08<br/>Monitor.</th>
-                    </>}
-                    {view === 'pencairan' && (
-                      <>
-                        <th style={thStyle({ width: '9%' })}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                            <span>Arsip Pencairan</span>
-                            <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>periode 2026</span>
-                          </div>
-                        </th>
-                        <th style={thStyle({ width: '11%', background: '#f1f5f9', textAlign: 'center' })}>Periode<br/>Cek</th>
-                        <th style={thStyle({ width: '6%', background: '#e0f2fe', textAlign: 'center' })}>Total<br/>Pinjaman</th>
-                        <th style={thStyle({ width: '6%', background: '#e0f2fe', textAlign: 'center' })}>Arsip<br/>Lengkap</th>
-                        <th style={thStyle({ width: '7%', background: '#e0f2fe', textAlign: 'center' })}>File Tdk<br/>Sesuai</th>
-                        <th style={thStyle({ width: '6%', background: '#e0f2fe', textAlign: 'center' })}>File Tdk<br/>Lengkap</th>
-                        <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>03 -<br/>PPI</th>
-                        <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>06 -<br/>Pengajuan</th>
-                        <th style={thStyle({ width: '5%', background: '#dcfce7', textAlign: 'center' })}>07 -<br/>Akad</th>
-                        <th style={thStyle({ width: '6%', background: '#dcfce7', textAlign: 'center' })}>08 -<br/>Monitoring</th>
-                        <th style={thStyle({ width: '6%', background: '#dcfce7', textAlign: 'center' })}>10 -<br/>Lainnya</th>
-                      </>
-                    )}
-                    <th style={thStyle({ width: view === 'pencairan' ? '6%' : view === 'anggota-masuk' ? '5%' : '14%', whiteSpace: 'nowrap' })}>Tgl Cek</th>
-                    <th style={thStyle({ width: view === 'pencairan' ? '3%' : view === 'anggota-masuk' ? '5%' : '12%', textAlign: 'center' })}>Aksi</th>
-                  </tr>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 30 }}>
+                  {view === 'anggota' ? (
+                    <>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th colSpan={3} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', position: 'sticky', left: 0, zIndex: 31, boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Informasi Cabang</th>
+                        <th colSpan={7} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Arsip</th>
+                        <th colSpan={11} style={thStyle({ textAlign: 'center', background: '#f0fdf4', borderBottom: '1px solid #cbd5e1' })}>Kategori Kekurangan</th>
+                        <th colSpan={2} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1' })}>Informasi</th>
+                      </tr>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th style={thStyle({ width: '30px', textAlign: 'center', position: 'sticky', left: 0, zIndex: 31, background: '#f8fafc' })}>No</th>
+                        <th style={thStyle({ width: '44px', textAlign: 'center', position: 'sticky', left: '30px', zIndex: 31, background: '#f8fafc' })}>Kode</th>
+                        <th style={thStyle({ width: '150px', position: 'sticky', left: '74px', zIndex: 31, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Nama Cabang</th>
+                        {/* Progress cols */}
+                        <th style={thStyle({ width: '105px', textAlign: 'center', background: '#f1f5f9' })}>Arsip %</th>
+                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#e0f2fe' })}>Total<br/>Member</th>
+                        <th style={thStyle({ width: '52px', textAlign: 'center', background: '#dcfce7' })}>Arsip<br/>Lengkap</th>
+                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#fef9c3' })}>File<br/>Kurang</th>
+                        <th style={thStyle({ width: '58px', textAlign: 'center', background: '#fee2e2' })}>Tidak<br/>Ditemukan</th>
+                        <th style={thStyle({ width: '58px', textAlign: 'center', background: '#f3f4f6' })}>Tidak<br/>Aktif</th>
+                        {/* Kategori cols: 38px each × 11 */}
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>01<br/>KTP</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>02<br/>KK</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>03<br/>PPI</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>04<br/>UK</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>05<br/>Anggt</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>06<br/>Peng</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>07<br/>Akad</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>08<br/>Mon</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>09<br/>SHR</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>10<br/>Lain</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>11<br/>Cuti</th>
+                        {/* Info cols */}
+                        <th style={thStyle({ width: '74px', textAlign: 'center', background: '#f8fafc' })}>Tgl Cek</th>
+                        <th style={thStyle({ width: '50px', textAlign: 'center', background: '#f8fafc' })}>Aksi</th>
+                      </tr>
+                    </>
+                  ) : view === 'anggota-masuk' ? (
+                    <>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th colSpan={3} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', position: 'sticky', left: 0, zIndex: 31, boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Informasi Cabang</th>
+                        <th colSpan={6} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Arsip</th>
+                        <th colSpan={8} style={thStyle({ textAlign: 'center', background: '#f0fdf4', borderBottom: '1px solid #cbd5e1' })}>Kategori Kekurangan</th>
+                        <th colSpan={2} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1' })}>Informasi</th>
+                      </tr>
+                      <tr style={{ background: '#f8fafc' }}>
+                        {/* NO: 30px | KODE: 44px → sticky ends at 74px */}
+                        <th style={thStyle({ width: '30px', textAlign: 'center', position: 'sticky', left: 0, zIndex: 31, background: '#f8fafc' })}>No</th>
+                        <th style={thStyle({ width: '44px', textAlign: 'center', position: 'sticky', left: '30px', zIndex: 31, background: '#f8fafc' })}>Kode</th>
+                        {/* Nama Cabang: 150px, sticky at left:74px */}
+                        <th style={thStyle({ width: '150px', position: 'sticky', left: '74px', zIndex: 31, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Nama Cabang</th>
+                        {/* Arsip%: 105px | Periode: 160px (fits "01 Jan 2026 – 30 Jun 2026" on 1 line) */}
+                        <th style={thStyle({ width: '105px', textAlign: 'center', background: '#f1f5f9' })}>Arsip %</th>
+                        <th style={thStyle({ width: '160px', textAlign: 'center', background: '#f1f5f9' })}>Periode Cek</th>
+                        {/* Progress cols */}
+                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#e0f2fe' })}>Total<br/>Masuk</th>
+                        <th style={thStyle({ width: '52px', textAlign: 'center', background: '#dcfce7' })}>Arsip<br/>Lengkap</th>
+                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#fef9c3' })}>File<br/>Kurang</th>
+                        <th style={thStyle({ width: '58px', textAlign: 'center', background: '#fee2e2' })}>Tidak<br/>Ditemukan</th>
+                        {/* Kategori cols: 38px each × 8 */}
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>01<br/>KTP</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>02<br/>KK</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>03<br/>PPI</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>04<br/>UK</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>05<br/>Anggt</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>06<br/>Peng</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>07<br/>Akad</th>
+                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>08<br/>Mon</th>
+                        {/* Info cols */}
+                        <th style={thStyle({ width: '74px', textAlign: 'center', background: '#f8fafc' })}>Tgl Cek</th>
+                        <th style={thStyle({ width: '50px', textAlign: 'center', background: '#f8fafc' })}>Aksi</th>
+                      </tr>
+                    </>
+                  ) : view === 'pencairan' ? (
+                    <>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th colSpan={3} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', position: 'sticky', left: 0, zIndex: 31, boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Informasi Cabang</th>
+                        <th colSpan={6} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Pencairan</th>
+                        <th colSpan={5} style={thStyle({ textAlign: 'center', background: '#f0fdf4', borderBottom: '1px solid #cbd5e1' })}>Kategori Kekurangan</th>
+                        <th colSpan={2} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1' })}>Informasi</th>
+                      </tr>
+                      <tr style={{ background: '#f8fafc' }}>
+                        {/* NO: 30px | KODE: 44px → sticky ends at 74px */}
+                        <th style={thStyle({ width: '30px', textAlign: 'center', position: 'sticky', left: 0, zIndex: 31, background: '#f8fafc' })}>No</th>
+                        <th style={thStyle({ width: '44px', textAlign: 'center', position: 'sticky', left: '30px', zIndex: 31, background: '#f8fafc' })}>Kode</th>
+                        {/* Nama Cabang: 150px, sticky at left:74px */}
+                        <th style={thStyle({ width: '150px', position: 'sticky', left: '74px', zIndex: 31, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Nama Cabang</th>
+                        {/* Arsip%: 105px | Periode: 160px */}
+                        <th style={thStyle({ width: '105px', textAlign: 'center', background: '#f1f5f9' })}>Arsip %</th>
+                        <th style={thStyle({ width: '160px', textAlign: 'center', background: '#f1f5f9' })}>Periode Cek</th>
+                        {/* Progress cols */}
+                        <th style={thStyle({ width: '52px', textAlign: 'center', background: '#e0f2fe' })}>Total<br/>Pinjaman</th>
+                        <th style={thStyle({ width: '52px', textAlign: 'center', background: '#dcfce7' })}>Arsip<br/>Lengkap</th>
+                        <th style={thStyle({ width: '54px', textAlign: 'center', background: '#fef9c3' })}>File Tdk<br/>Sesuai</th>
+                        <th style={thStyle({ width: '54px', textAlign: 'center', background: '#fee2e2' })}>File Tdk<br/>Lengkap</th>
+                        {/* Kategori cols: 40px each × 5 */}
+                        <th style={thStyle({ width: '40px', textAlign: 'center', background: '#f0fdf4' })}>03<br/>PPI</th>
+                        <th style={thStyle({ width: '40px', textAlign: 'center', background: '#f0fdf4' })}>06<br/>Peng</th>
+                        <th style={thStyle({ width: '40px', textAlign: 'center', background: '#f0fdf4' })}>07<br/>Akad</th>
+                        <th style={thStyle({ width: '40px', textAlign: 'center', background: '#f0fdf4' })}>08<br/>Mon</th>
+                        <th style={thStyle({ width: '40px', textAlign: 'center', background: '#f0fdf4' })}>10<br/>Lain</th>
+                        {/* Info cols */}
+                        <th style={thStyle({ width: '74px', textAlign: 'center', background: '#f8fafc' })}>Tgl Cek</th>
+                        <th style={thStyle({ width: '50px', textAlign: 'center', background: '#f8fafc' })}>Aksi</th>
+                      </tr>
+                    </>
+                  ) : (
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th colSpan={colCount} style={thStyle({ textAlign: 'center', background: '#f8fafc' })}>Invalid View</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody>
                   {loading ? (
@@ -761,115 +812,117 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                     return (
                       <tr
                         key={item.id}
-                        style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s', background: isEven ? '#fff' : '#fafafa' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
-                        onMouseLeave={e => (e.currentTarget.style.background = isEven ? '#fff' : '#fafafa')}
+                        style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s', background: isEven ? '#fff' : '#fafafa', verticalAlign: 'middle' }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = '#f0f9ff';
+                          Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = '#f0f9ff'; });
+                        }}
+                        onMouseLeave={e => {
+                          const bg = isEven ? '#fff' : '#fafafa';
+                          e.currentTarget.style.background = bg;
+                          Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = bg; });
+                        }}
                       >
-                        <td style={{ padding: '6px 8px', textAlign: 'center', color: '#64748b', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700 }}>{idx + 1}</td>
-                        <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: '#334155', fontSize: '12px', fontWeight: 700 }}>{item.kode_cabang}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 800, color: '#020617', fontSize: '12px' }}>{item.nama_cabang}</td>
-                        {view === 'anggota' && <>
-                          <td style={{ padding: '4px 6px' }}><MetricCell value={pctAnggota} /></td>
-                        </>}
+                        {/* Sticky cells — offsets: NO=30, KODE=30+44=74, NAMA=30+44+150=224 */}
+                        <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#64748b', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, position: 'sticky', left: 0, zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{idx + 1}</td>
+                        <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', fontFamily: 'monospace', color: '#334155', fontSize: '11px', fontWeight: 700, position: 'sticky', left: '30px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{item.kode_cabang}</td>
+                        {/* Nama Cabang: NO maxWidth, NO overflow:hidden — let column width control it */}
+                        <td style={{ padding: '2px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{item.nama_cabang}</td>
+                        {view === 'anggota' && (() => {
+                          const obj = item.arsip_anggota?.[0];
+                          const getMD = (k: string) => item.arsip_anggota_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                          const renderMDVal = (kode: string) => {
+                            const val = getMD(kode);
+                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
+                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
+                          };
+                          return (
+                            <>
+                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctAnggota} /></td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{obj?.member ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{obj?.lengkap ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{obj?.kurang ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_ditemukan ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_aktif ?? 0}</td>
+                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
+                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
+                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
+                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
+                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
+                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
+                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
+                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
+                              <td className={getMD('09') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('09')}</td>
+                              <td className={getMD('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('10')}</td>
+                              <td className={getMD('11') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('11')}</td>
+                            </>
+                          );
+                        })()}
                         {view === 'anggota-masuk' && (() => {
                           const getMD = (k: string) => item.arsip_anggota_masuk_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
                           const renderMDVal = (kode: string) => {
                             const val = getMD(kode);
-                            if (val === 0) return <span className="arsip-zero-badge" title="Clear">✓ 0</span>;
-                            return <span className="arsip-nonzero-val">{val}</span>;
+                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
+                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
                           };
                           return (
                             <>
-                              <td style={{ padding: '4px 6px' }}><MetricCell value={pctMasuk} /></td>
-                              <td style={{ padding: '4px 6px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569' }}>
+                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctMasuk} /></td>
+                              {/* Periode Cek: whiteSpace nowrap — col is 160px, fits "01 Jan 2026 – 30 Jun 2026" on 1 line */}
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                                 {formatPeriode(anggotaMasuk?.periode)}
                               </td>
-                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#1e293b' }}>{anggotaMasuk?.member ?? 0}</td>
-                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#15803d' }}>{anggotaMasuk?.lengkap ?? 0}</td>
-                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#d97706' }}>{anggotaMasuk?.kurang ?? 0}</td>
-                              <td style={{ padding: '4px 6px', fontWeight: 700, textAlign: 'center', color: '#dc2626' }}>{anggotaMasuk?.tidak_ditemukan ?? 0}</td>
-                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('01')}</td>
-                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('02')}</td>
-                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('03')}</td>
-                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('04')}</td>
-                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('05')}</td>
-                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('06')}</td>
-                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('07')}</td>
-                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '4px 6px', textAlign: 'center' }}>{renderMDVal('08')}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.member ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.lengkap ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.kurang ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.tidak_ditemukan ?? 0}</td>
+                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
+                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
+                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
+                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
+                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
+                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
+                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
+                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
                             </>
                           );
                         })()}
                         {view === 'pencairan' && (() => {
                           const getDoc = (k: string) => item.arsip_pencairan_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
-                          // Helper: render nilai per kolom arsip dengan badge jika 0
                           const renderArsipVal = (kode: string) => {
                             const val = getDoc(kode);
-                            if (val === 0) {
-                              return (
-                                <span className="arsip-zero-badge" title="Clear — tidak ada tunggakan">
-                                  ✓ 0
-                                </span>
-                              );
-                            }
-                            return <span className="arsip-nonzero-val">{val}</span>;
+                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear — tidak ada tunggakan">✓ 0</span>;
+                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
                           };
 
                           return (
                             <>
-                              <td style={{ padding: '6px 8px' }}><MetricCell value={pctPencairan} /></td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: '11px', textAlign: 'center', lineHeight: 1.2 }}>
-                                {formatPeriode(pencairan?.periode)}
+                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctPencairan} /></td>
+                              {/* Periode Cek: whiteSpace nowrap — col is 160px */}
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                {formatPeriode(pencairan?.periode).replace(' - ', '–')}
                               </td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>{pencairan?.total_pinjaman ?? 0}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, color: '#15803d', textAlign: 'center' }}>{pencairan?.arsip_lengkap ?? 0}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, color: '#f59e0b', textAlign: 'center' }}>{pencairan?.nama_file_tidak_sesuai ?? 0}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, color: '#ef4444', textAlign: 'center' }}>{pencairan?.file_tidak_lengkap ?? 0}</td>
-                              {/* ── Kolom 03 PPI ── */}
-                              <td
-                                className={getDoc('03') === 0 ? 'clear-arsip-cell' : undefined}
-                                style={{ padding: '6px 8px', textAlign: 'center' }}
-                              >
-                                {renderArsipVal('03')}
-                              </td>
-                              {/* ── Kolom 06 Pengajuan ── */}
-                              <td
-                                className={getDoc('06') === 0 ? 'clear-arsip-cell' : undefined}
-                                style={{ padding: '6px 8px', textAlign: 'center' }}
-                              >
-                                {renderArsipVal('06')}
-                              </td>
-                              {/* ── Kolom 07 Akad ── */}
-                              <td
-                                className={getDoc('07') === 0 ? 'clear-arsip-cell' : undefined}
-                                style={{ padding: '6px 8px', textAlign: 'center' }}
-                              >
-                                {renderArsipVal('07')}
-                              </td>
-                              {/* ── Kolom 08 Monitoring ── */}
-                              <td
-                                style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}
-                              >
-                                {getDoc('08')}
-                              </td>
-                              {/* ── Kolom 10 Lainnya ── */}
-                              <td
-                                className={getDoc('10') === 0 ? 'clear-arsip-cell' : undefined}
-                                style={{ padding: '6px 8px', textAlign: 'center' }}
-                              >
-                                {renderArsipVal('10')}
-                              </td>
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.total_pinjaman ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#15803d', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.arsip_lengkap ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#f59e0b', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.nama_file_tidak_sesuai ?? 0}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#ef4444', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.file_tidak_lengkap ?? 0}</td>
+                              <td className={getDoc('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('03')}</td>
+                              <td className={getDoc('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('06')}</td>
+                              <td className={getDoc('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('07')}</td>
+                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '12px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{getDoc('08')}</td>
+                              <td className={getDoc('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('10')}</td>
                             </>
                           );
                         })()}
-                        <td style={{ padding: '6px 8px', color: '#64748b', fontSize: '11px' }}>
+                        <td style={{ padding: '2px 4px', color: '#64748b', fontSize: '10px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
                           {formatDate(
                             view === 'anggota' ? (item.tanggal_cek_anggota ?? item.tanggal_cek) :
                             view === 'pencairan' ? (item.tanggal_cek_pencairan ?? item.tanggal_cek) :
                             (item.tanggal_cek_anggota_masuk ?? item.tanggal_cek)
                           )}
                         </td>
-                        <td style={{ padding: '6px 8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                             <ActionBtn onClick={() => { setDrawerItem(item); setDrawerOpen(true); }} title="Detail" hoverColor="#6366f1">
                               <Eye size={14} />
                             </ActionBtn>
@@ -1074,12 +1127,12 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
 
 // ─── Tiny helpers ───────────────────────────────────────
 const thStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
-  padding: '8px 10px',
-  fontSize: '11px',
-  fontWeight: 600,
+  padding: '4px 4px',
+  fontSize: '10px',
+  fontWeight: 700,
   textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  lineHeight: 1.3,
+  letterSpacing: '0.2px',
+  lineHeight: 1.2,
   color: '#64748b',
   verticalAlign: 'middle',
   borderBottom: '1px solid #e5e7eb',
@@ -1097,8 +1150,8 @@ const ActionBtn = ({
       onClick={onClick}
       title={title}
       style={{
-        padding: '5px', border: 'none', background: hover ? hoverColor + '14' : 'none',
-        color: hover ? hoverColor : '#cbd5e1', borderRadius: '5px',
+        padding: '2px', border: 'none', background: hover ? hoverColor + '14' : 'none',
+        color: hover ? hoverColor : '#cbd5e1', borderRadius: '4px',
         cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center'
       }}
       onMouseEnter={() => setHover(true)}

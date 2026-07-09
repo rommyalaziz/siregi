@@ -38,6 +38,18 @@
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mdisgo-hidden-date-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .mdisgo-edit-info-btn {
@@ -69,37 +81,39 @@
   gap: 8px;
 }
 
-.mdisgo-btn-compact {
-  padding: 4px 10px !important;
-  font-size: 11px !important;
-  height: 28px !important;
-}
-
-/* Search Box override for compact mode if needed */
-.mdisgo-header-actions .search-box input {
-  padding-top: 4px;
-  padding-bottom: 4px;
+.mdisgo-btn-add {
+  padding: 6px 14px;
   font-size: 11px;
-  height: 28px;
+  background-color: var(--color-primary, #3B82F6);
+  color: white;
+  border-radius: 6px;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-
-.mdisgo-header-actions .search-box svg {
-  width: 14px;
-  height: 14px;
+.mdisgo-btn-add:hover {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
 
 /* Summary Stat Cards — Dense Mode */
 .mdisgo-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px; /* Reduced gap */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px; /* Reduced gap further */
 }
 
 .mdisgo-stat-card {
-  padding: 8px 12px; /* Reduced padding */
+  padding: 6px 8px; /* Reduced padding */
   display: flex;
   align-items: center;
-  gap: 8px; /* Closer alignment */
+  gap: 6px; /* Closer alignment */
   transition: transform 0.15s ease, background-color 0.15s ease;
   box-shadow: none !important;
   border: 1px solid var(--color-border); /* Subtle separator */
@@ -111,8 +125,8 @@
 }
 
 .mdisgo-stat-icon {
-  width: 28px; /* Smaller icon container */
-  height: 28px;
+  width: 24px; /* Smaller icon container */
+  height: 24px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -121,8 +135,8 @@
 }
 
 .mdisgo-stat-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
 }
 
 .mdisgo-stat-icon.blue { background: #EBF5FF; color: #2563EB; }
@@ -137,7 +151,7 @@
 }
 
 .mdisgo-stat-info h4 {
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -146,14 +160,14 @@
 }
 
 .mdisgo-stat-info .stat-value {
-  font-size: 16px; /* Reduced */
+  font-size: 14px; /* Reduced */
   font-weight: 700;
   color: var(--color-text-main);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .mdisgo-stat-info .stat-sub {
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--color-text-muted);
   margin-top: 1px;
 }
@@ -171,7 +185,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 12px; /* Tighter header */
+  padding: 4px 10px; /* Tighter header */
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-main);
 }
@@ -180,6 +194,29 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--color-text-main);
+  margin: 0;
+}
+
+.table-search {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-input, #f3f4f6);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0 8px;
+  height: 28px;
+}
+.table-search input {
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
+  font-size: 11px;
+  outline: none;
+  width: 150px;
+  color: var(--color-text-main);
+}
+.table-search svg {
+  color: var(--color-text-muted);
 }
 
 .mdisgo-table-wrapper {
@@ -196,12 +233,12 @@
 
 .mdisgo-table th,
 .mdisgo-table td {
-  padding: 2px 4px; /* Ultra compact padding */
+  padding: 1px 4px; /* Ultra compact padding */
   border-bottom: 1px solid var(--color-border); /* Subtle row dividers */
-  font-size: 10.5px; /* Smaller base font */
+  font-size: 10px; /* Smaller base font */
   white-space: nowrap;
   vertical-align: middle;
-  height: 22px; /* Fixed minimal row height */
+  height: 20px; /* Fixed minimal row height */
 }
 
 .mdisgo-table th {
@@ -210,12 +247,12 @@
   z-index: 10;
   background-color: var(--color-bg-main);
   font-weight: 600;
-  font-size: 8.5px;
+  font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   color: var(--color-text-muted);
   border-bottom: 1px solid var(--color-border);
-  padding: 4px 4px;
+  padding: 3px 4px;
 }
 
 .mdisgo-table tbody tr {
@@ -243,16 +280,16 @@
   text-transform: uppercase;
 }
 
-.mdisgo-status.active {
-  background-color: transparent;
+.mdisgo-status.tercapai {
+  background-color: #ECFDF5;
   color: #059669; /* Soft corporate green */
   border: 1px solid #A7F3D0;
 }
 
-.mdisgo-status.completed {
-  background-color: transparent;
-  color: #1E40AF;
-  border: 1px solid #BFDBFE;
+.mdisgo-status.belum-tercapai {
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
 }
 
 .mdisgo-status.belum {
@@ -267,8 +304,8 @@
   border-radius: 50%;
 }
 
-.mdisgo-status.active .mdisgo-status-dot { background-color: #10B981; }
-.mdisgo-status.completed .mdisgo-status-dot { background-color: #3B82F6; }
+.mdisgo-status.tercapai .mdisgo-status-dot { background-color: #10B981; }
+.mdisgo-status.belum-tercapai .mdisgo-status-dot { background-color: #EF4444; }
 .mdisgo-status.belum .mdisgo-status-dot { background-color: #F59E0B; }
 
 /* Row data cells */
@@ -286,27 +323,66 @@
 
 .mdisgo-branch-name {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--color-text-main);
 }
 
 .mdisgo-date {
   color: var(--color-text-muted);
-  font-size: 10px;
+  font-size: 9.5px;
 }
 
 .mdisgo-members {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--color-text-main);
   text-align: center;
 }
 
+/* Progress Bar */
+.mdisgo-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.mdisgo-progress-text {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--color-text-main);
+  font-size: 9px;
+}
+.mdisgo-progress-check {
+  position: absolute;
+  left: 100%;
+  margin-left: 3px;
+  color: #10B981;
+}
+.mdisgo-progress-bg {
+  width: 100%;
+  height: 8px; /* Taller progress bar */
+  background-color: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+  max-width: 60px; /* Wider progress bar */
+}
+.mdisgo-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.mdisgo-progress-fill.green { background-color: #10B981; }
+.mdisgo-progress-fill.yellow { background-color: #F59E0B; }
+.mdisgo-progress-fill.red { background-color: #EF4444; }
+
 /* Admin action buttons - Show on hover */
 .mdisgo-action-buttons {
   display: flex;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-end;
+  gap: 8px;
   opacity: 0.1;
   transition: opacity 0.15s ease;
 }
@@ -317,8 +393,8 @@
 
 .mdisgo-action-btn {
   color: var(--color-text-muted);
-  padding: 3px;
-  border-radius: 3px;
+  padding: 4px;
+  border-radius: 4px;
   background: transparent;
   border: none;
   cursor: pointer;

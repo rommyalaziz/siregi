@@ -17,6 +17,9 @@ const DEFAULT_ANGGOTA_DOCS = [
   { kode_dokumen: '06', nama_dokumen: 'Form Pengajuan', jumlah: 0 },
   { kode_dokumen: '07', nama_dokumen: 'Form Akad', jumlah: 0 },
   { kode_dokumen: '08', nama_dokumen: 'Form Monitoring', jumlah: 0 },
+  { kode_dokumen: '09', nama_dokumen: 'Form Simpanan Hari Raya', jumlah: 0 },
+  { kode_dokumen: '10', nama_dokumen: 'Form Lainnya', jumlah: 0 },
+  { kode_dokumen: '11', nama_dokumen: 'Form Cuti', jumlah: 0 },
 ];
 const DEFAULT_ANGGOTA_MASUK_DOCS = [
   { kode_dokumen: '01', nama_dokumen: 'KTP', jumlah: 0 },

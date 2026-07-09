@@ -109,8 +109,7 @@ button {
   cursor: pointer;
 }
 
-/* Only reset border/background on buttons that use legacy .btn or .icon-btn classes */
-button.btn,
+/* Only reset border/background on buttons that use legacy classes */
 button.icon-btn,
 button.menu-toggle-btn {
   border: none;
@@ -145,6 +144,8 @@ ul {
 
 /* Buttons */
 .btn {
+  border: none;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;

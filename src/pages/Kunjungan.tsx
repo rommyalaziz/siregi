@@ -324,6 +324,7 @@ const Kunjungan = () => {
             font-size: 10px; color: #1E293B; background: #F8F9FB;
             padding: 5px 8px; border-radius: 4px;
             border: 1px solid #E2E8F0; line-height: 1.4; min-height: 20px;
+            white-space: pre-wrap;
           }
           .print-signatures {
             display: flex; justify-content: flex-end; margin-top: 24px; padding: 0 10px;
@@ -428,11 +429,11 @@ const Kunjungan = () => {
   };
 
   const handleKurangChange = (field: keyof KunjunganCabang, value: string) => {
-    const num = parseInt(value, 10);
+    const num = parseFloat(value);
     setFormData(prev => ({ ...prev, [field]: isNaN(num) ? 0 : num }));
   };
 
-  const renderDocChecklistItem = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang) => {
+  const renderDocChecklistItem = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang, isPercentage: boolean = false) => {
     const isChecked = Boolean(formData[boolField as keyof typeof formData]);
     const checkedClass = isChecked ? 'checked' : '';
     return (
@@ -448,13 +449,14 @@ const Kunjungan = () => {
             <input 
               type="number" 
               min="0" 
-              placeholder="Jml" 
+              step={isPercentage ? "0.01" : "1"}
+              placeholder={isPercentage ? "%" : "Jml"} 
               value={(formData[numField as keyof typeof formData] as number) || ''}
               onChange={(e) => handleKurangChange(numField, e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              style={{ width: '40px', padding: '2px 4px', fontSize: '11px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+              style={{ width: isPercentage ? '55px' : '40px', padding: '2px 4px', fontSize: '11px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
             />
-            <span style={{ fontSize: '10px', color: '#64748b' }}>krg</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>{isPercentage ? '%' : 'krg'}</span>
           </div>
         )}
       </div>
@@ -479,7 +481,7 @@ const Kunjungan = () => {
     );
   };
 
-  const renderDetailDocChecklist = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang) => {
+  const renderDetailDocChecklist = (label: string, boolField: keyof KunjunganCabang, numField: keyof KunjunganCabang, isPercentage: boolean = false) => {
     if (!editingItem) return null;
     const isChecked = Boolean(editingItem[boolField as keyof typeof editingItem]);
     const kurangCount = Number(editingItem[numField as keyof typeof editingItem]) || 0;
@@ -487,7 +489,7 @@ const Kunjungan = () => {
     return (
       <div className={`kj-detail-checklist-row ${isChecked ? 'yes' : 'no'}`}>
         {isChecked ? <CheckCircle2 size={14} /> : <X size={14} />}
-        <span>{label} {(!isChecked && kurangCount > 0) ? `(Kurang: ${kurangCount} file)` : ''}</span>
+        <span>{label} {(!isChecked && kurangCount > 0) ? (isPercentage ? `(${kurangCount}%)` : `(Kurang: ${kurangCount} file)`) : ''}</span>
       </div>
     );
   };
@@ -760,7 +762,7 @@ const Kunjungan = () => {
                     
                     <div className="kj-checklist-sub-title" style={{ marginTop: '8px', fontSize: '10px' }}>Dokumen Harian Sudah Discan:</div>
                     {renderDocChecklistItem('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
-                    {renderDocChecklistItem('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
+                    {renderDocChecklistItem('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota', true)}
                     {renderDocChecklistItem('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
                     {renderDocChecklistItem('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
                     {renderDocChecklistItem('SIHARA', 'c_dok_sihara', 'n_kurang_sihara')}
@@ -909,7 +911,7 @@ const Kunjungan = () => {
                       {renderDetailChecklist('Folder D:\\ rapi', 'c_folder_d_rapi')}
                       <span style={{ fontSize: '8px', color: '#666', marginTop: '4px', display: 'block' }}>Dokumen Harian Discan:</span>
                       {renderDetailDocChecklist('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
-                      {renderDetailDocChecklist('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota')}
+                      {renderDetailDocChecklist('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota', true)}
                       {renderDetailDocChecklist('Anggota Keluar', 'c_dok_anggota_keluar', 'n_kurang_anggota_keluar')}
                       {renderDetailDocChecklist('Dana Resiko', 'c_dok_dana_resiko', 'n_kurang_dana_resiko')}
                       {renderDetailDocChecklist('SIHARA', 'c_dok_sihara', 'n_kurang_sihara')}

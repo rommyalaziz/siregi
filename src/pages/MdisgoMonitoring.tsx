@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import {
   Search, Building2, Users, Plus, Pencil, Trash2,
-  X, Loader2, CheckCircle2, GraduationCap, Save, AlertTriangle, Clock
+  X, Loader2, CheckCircle2, GraduationCap, Save, AlertTriangle, Clock, Target
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './MdisgoMonitoring.css';
@@ -24,10 +24,8 @@ const MdisgoMonitoring = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   
   // Last updated info
-  const [lastUpdatedInfo, setLastUpdatedInfo] = useState('Belum ada informasi');
-  const [showUpdateInfoModal, setShowUpdateInfoModal] = useState(false);
-  const [updateInfoInput, setUpdateInfoInput] = useState('');
-  const [savingInfo, setSavingInfo] = useState(false);
+  const [lastUpdatedInfo, setLastUpdatedInfo] = useState('');
+  const [_savingInfo, setSavingInfo] = useState(false);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -97,6 +95,7 @@ const MdisgoMonitoring = () => {
   const trainedBranches = data.filter(b => b.status !== 'Belum').length;
   const belumBranches = data.filter(b => b.status === 'Belum').length;
   const totalMembers = data.reduce((acc, curr) => acc + (curr.members_accessed || 0), 0);
+  const targetReachedBranches = data.filter(b => b.total_members && b.status !== 'Belum' && ((b.members_accessed / b.total_members) * 100) >= 20).length;
   const trainedData = data.filter(b => b.training_date);
   const latestDate = trainedData.length > 0
     ? trainedData.reduce((latest, curr) => {
@@ -198,19 +197,19 @@ const MdisgoMonitoring = () => {
     }
   };
 
-  const handleSaveUpdateInfo = async () => {
-    if (!updateInfoInput.trim()) return;
+  const handleDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    if (!newDate) return;
     setSavingInfo(true);
     try {
       const { error } = await supabase
         .from('app_settings')
-        .upsert({ key: 'mdisgo_last_updated', value: updateInfoInput, updated_at: new Date().toISOString() });
+        .upsert({ key: 'mdisgo_last_updated', value: newDate, updated_at: new Date().toISOString() });
       
       if (error) throw error;
       
-      setLastUpdatedInfo(updateInfoInput);
-      setMessage({ type: 'success', text: 'Informasi update data berhasil disimpan.' });
-      setShowUpdateInfoModal(false);
+      setLastUpdatedInfo(newDate);
+      setMessage({ type: 'success', text: 'Tanggal update berhasil disimpan.' });
     } catch (err: any) {
       console.error('Error saving update info:', err);
       setMessage({ type: 'error', text: err.message || 'Gagal menyimpan info update.' });
@@ -234,39 +233,42 @@ const MdisgoMonitoring = () => {
         <div className="mdisgo-header-titles">
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <h1>MDISGO</h1>
-            <div className="mdisgo-update-badge">
+            <div 
+              className="mdisgo-update-badge"
+              style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+              onClick={(e) => {
+                if (isAdmin) {
+                  const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement;
+                  try {
+                    input?.showPicker();
+                  } catch (err) {
+                    // Fallback for browsers that don't support showPicker
+                    input?.focus();
+                  }
+                }
+              }}
+            >
               <Clock size={12} />
-              <span>Update Data: <strong>{lastUpdatedInfo}</strong></span>
+              <span>Update Data: <strong>{lastUpdatedInfo ? new Date(lastUpdatedInfo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pilih Tanggal'}</strong></span>
               {isAdmin && (
-                <button 
-                  className="mdisgo-edit-info-btn" 
-                  onClick={() => {
-                    setUpdateInfoInput(lastUpdatedInfo);
-                    setShowUpdateInfoModal(true);
-                  }}
-                  title="Edit Info Update"
-                >
-                  <Pencil size={10} />
-                </button>
+                <input 
+                  type="date"
+                  className="mdisgo-hidden-date-input"
+                  style={{ position: 'absolute', visibility: 'hidden' }}
+                  value={lastUpdatedInfo || ''}
+                  onChange={handleDateChange}
+                  title="Pilih tanggal update"
+                />
               )}
             </div>
           </div>
           <span className="mdisgo-subtitle">Monitoring cabang yang telah mengikuti training MDISGO.</span>
         </div>
         <div className="mdisgo-header-actions">
-          <div className="search-box">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Cari cabang..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
           {isAdmin && (
-            <button className="btn btn-primary mdisgo-btn-compact" onClick={openAddModal}>
+            <button className="btn btn-primary mdisgo-btn-add" onClick={openAddModal}>
               <Plus size={14} />
-              <span>Tambah</span>
+              <span>Tambah Cabang</span>
             </button>
           )}
         </div>
@@ -280,7 +282,7 @@ const MdisgoMonitoring = () => {
         </div>
       )}
 
-      {/* Summary Stats — 4 cards */}
+      {/* Summary Stats — 5 cards */}
       <div className="mdisgo-stats-grid">
         <Card className="mdisgo-stat-card">
           <div className="mdisgo-stat-icon blue">
@@ -301,6 +303,17 @@ const MdisgoMonitoring = () => {
             <h4>Sudah Training</h4>
             <div className="stat-value">{trainedBranches}</div>
             <div className="stat-sub">Active / Completed</div>
+          </div>
+        </Card>
+
+        <Card className="mdisgo-stat-card">
+          <div className="mdisgo-stat-icon" style={{ background: '#ECFDF5', color: '#059669' }}>
+            <Target size={18} />
+          </div>
+          <div className="mdisgo-stat-info">
+            <h4>Pencapaian Target</h4>
+            <div className="stat-value">{targetReachedBranches} <span style={{fontSize: '11px', fontWeight: 'normal', color: 'var(--color-text-muted)'}}>dari {totalBranches}</span></div>
+            <div className="stat-sub">Sudah capai 20%</div>
           </div>
         </Card>
 
@@ -330,13 +343,24 @@ const MdisgoMonitoring = () => {
       {/* Data Table */}
       <Card className="mdisgo-table-card">
         <div className="mdisgo-table-header">
-          <h3>
-            <GraduationCap size={13} style={{ verticalAlign: 'middle', marginRight: '5px', opacity: 0.5 }} />
-            Daftar Cabang MDISGO
-          </h3>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-            {filteredData.length} cabang
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3>
+              <GraduationCap size={13} style={{ verticalAlign: 'middle', marginRight: '5px', opacity: 0.5 }} />
+              Daftar Cabang MDISGO
+            </h3>
+            <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+              ({filteredData.length} cabang)
+            </span>
+          </div>
+          <div className="search-box table-search">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Cari cabang..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="mdisgo-table-wrapper">
@@ -355,15 +379,15 @@ const MdisgoMonitoring = () => {
             <table className="mdisgo-table">
               <thead>
                 <tr>
-                  <th style={{ width: '30px', textAlign: 'center' }}>No</th>
-                  <th style={{ width: '50px', textAlign: 'center' }}>Kode</th>
+                  <th style={{ width: '25px', textAlign: 'center' }}>No</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}>Kode</th>
                   <th>Nama Cabang</th>
                   <th>Tanggal Training</th>
                   <th style={{ textAlign: 'center' }}>Member</th>
                   <th style={{ textAlign: 'center' }}>Anggota Akses</th>
                   <th style={{ textAlign: 'center' }}>Presentase</th>
                   <th style={{ textAlign: 'center' }}>Status</th>
-                  {isAdmin && <th style={{ width: '60px', textAlign: 'center' }}>Aksi</th>}
+                  {isAdmin && <th style={{ width: '50px', textAlign: 'right' }}>Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -392,15 +416,37 @@ const MdisgoMonitoring = () => {
                       </div>
                     </td>
                     <td style={{ textAlign: 'center' }} data-label="Presentase">
-                      <div className="mdisgo-percentage">
-                        {branch.status === 'Belum' || !branch.total_members ? '-' : `${((branch.members_accessed / branch.total_members) * 100).toFixed(1)}%`}
-                      </div>
+                      {(() => {
+                        if (branch.status === 'Belum' || !branch.total_members) return <div className="mdisgo-percentage">-</div>;
+                        const percentage = (branch.members_accessed / branch.total_members) * 100;
+                        let colorClass = 'red';
+                        if (percentage >= 20) colorClass = 'green';
+                        else if (percentage >= 15) colorClass = 'yellow';
+                        
+                        return (
+                          <div className="mdisgo-progress-wrapper">
+                            <div className="mdisgo-progress-text">
+                              {percentage.toFixed(1)}% {percentage >= 20 && <CheckCircle2 size={12} className="mdisgo-progress-check" />}
+                            </div>
+                            <div className="mdisgo-progress-bg">
+                              <div className={`mdisgo-progress-fill ${colorClass}`} style={{ width: `${Math.min(percentage, 100)}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ textAlign: 'center' }} data-label="Status">
-                      <span className={`mdisgo-status ${branch.status.toLowerCase()}`}>
-                        <span className="mdisgo-status-dot"></span>
-                        {branch.status}
-                      </span>
+                      {(() => {
+                        if (branch.status === 'Belum') return <span className="mdisgo-status belum"><span className="mdisgo-status-dot"></span>Belum Training</span>;
+                        const percentage = branch.total_members ? (branch.members_accessed / branch.total_members) * 100 : 0;
+                        const isReached = percentage >= 20;
+                        return (
+                          <span className={`mdisgo-status ${isReached ? 'tercapai' : 'belum-tercapai'}`}>
+                            <span className="mdisgo-status-dot"></span>
+                            {isReached ? 'Tercapai' : 'Belum Tercapai'}
+                          </span>
+                        );
+                      })()}
                     </td>
                     {isAdmin && (
                       <td style={{ textAlign: 'center' }} data-label="Aksi">
@@ -508,38 +554,7 @@ const MdisgoMonitoring = () => {
         </div>
       )}
 
-      {/* Update Info Modal */}
-      {showUpdateInfoModal && (
-        <div className="mdisgo-modal-overlay" onClick={() => setShowUpdateInfoModal(false)}>
-          <div className="mdisgo-modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="mdisgo-modal-header">
-              <h3>Edit Info Update Data</h3>
-              <button className="mdisgo-modal-close" onClick={() => setShowUpdateInfoModal(false)}><X size={16} /></button>
-            </div>
-            <div className="mdisgo-modal-body">
-              <div className="mdisgo-form-group">
-                <label>Informasi Update Data (contoh: 21 Apr 2026)</label>
-                <input
-                  type="text"
-                  placeholder="Masukkan informasi update..."
-                  value={updateInfoInput}
-                  onChange={(e) => setUpdateInfoInput(e.target.value)}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="mdisgo-modal-footer">
-              <button className="btn btn-outline" onClick={() => setShowUpdateInfoModal(false)} disabled={savingInfo} style={{ fontSize: '12px', padding: '6px 14px' }}>
-                Batal
-              </button>
-              <button className="btn btn-primary" onClick={handleSaveUpdateInfo} disabled={savingInfo || !updateInfoInput.trim()} style={{ fontSize: '12px', padding: '6px 14px' }}>
-                {savingInfo ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                <span>Simpan</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };
