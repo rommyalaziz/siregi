@@ -99,23 +99,10 @@ const MdisgoMonitoring = () => {
   const trainedBranches = data.filter(b => b.status !== 'Belum').length;
   const totalMembers = data.reduce((acc, curr) => acc + (curr.members_accessed || 0), 0);
   const targetReachedBranches = data.filter(b => b.total_members && b.status !== 'Belum' && ((b.members_accessed / b.total_members) * 100) >= 20).length;
-  const trainedData = data.filter(b => b.training_date);
-  const latestDate = trainedData.length > 0
-    ? trainedData.reduce((latest, curr) => {
-      const d = new Date(curr.training_date!);
-      return d > latest ? d : latest;
-    }, new Date(trainedData[0].training_date!))
-    : null;
-
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  };
-
-  const formatDateShort = (date: Date | null) => {
-    if (!date) return '-';
-    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   // Modal handlers
@@ -331,7 +318,6 @@ const MdisgoMonitoring = () => {
           <div className="mdisgo-stat-info">
             <h4>Total Akses Anggota</h4>
             <div className="stat-value">{totalMembers.toLocaleString('id-ID')}</div>
-            <div className="stat-sub">{latestDate ? `s.d. ${formatDateShort(latestDate)}` : '-'}</div>
           </div>
         </Card>
       </div>
