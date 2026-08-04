@@ -175,7 +175,7 @@ const InfoAccordion = () => {
           {[
             { label: 'Arsip Data Anggota', color: '#6366f1', desc: 'Keseluruhan data anggota aktif. Kelengkapan dokumen wajib 01–11.' },
             { label: 'Arsip Anggota (Non-KK)', color: '#6366f1', desc: 'Anggota aktif bergabung mulai 2025. Wajib dok 01–11, kecuali dok 02.' },
-            { label: 'Arsip Pencairan', color: '#0ea5e9', desc: 'Data pencairan tahun 2026 s.d. 17 Juni 2026.' },
+            { label: 'Arsip Pencairan', color: '#0ea5e9', desc: 'Data pencairan tahun 2026 s.d. 30 Juni 2026.' },
           ].map(item => (
             <div key={item.label} style={{ padding: '10px 12px', borderRadius: '6px', background: '#f8fafc', borderLeft: `3px solid ${item.color}` }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>{item.label}</div>

@@ -3,9 +3,26 @@ import { Card } from '../components/ui/Card';
 import { Badge, type BadgeVariant } from '../components/ui/Badge';
 
 import { Drawer } from '../components/Drawer';
-import { Search, Filter, Eye, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Download } from 'lucide-react';
+import { Search, Filter, Eye, Loader2, Ticket, ShieldAlert, RefreshCw, Coins, FileX, ClipboardType, CheckCircle2, Wrench, MoreHorizontal, Download, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './TableStyles.css';
+
+export const formatDateTime = (dateString?: string | null) => {
+  if (!dateString) return '-';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).replace('.', ':');
+  } catch (e) {
+    return dateString;
+  }
+};
 
 export const ERROR_WEIGHTS = {
   releaseVoucher: 3,
@@ -233,7 +250,7 @@ const StaffProgress = () => {
     if (data.length === 0) return;
     
     // Header for CSV
-    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "Minggon", "VAL", "TPK", "LL", "Point", "Grade", "Status"];
+    const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "Minggon", "VAL", "TPK", "LL", "Point", "Grade", "Status", "Terakhir Update"];
     
     // Map data to rows
     const rows = data.map((s, index) => [
@@ -252,7 +269,8 @@ const StaffProgress = () => {
       s.lain_lain || 0,
       s.totalKPI,
       s.grade,
-      s.status
+      s.status,
+      `"${formatDateTime(s.updated_at)}"`
     ]);
 
     const csvContent = [
@@ -396,13 +414,19 @@ const StaffProgress = () => {
                 <th style={{ minWidth: '70px' }}>POINT</th>
                 <th className="center-text">GRADE</th>
                 <th className="center-text">STATUS</th>
+                <th className="center-text">
+                  <div className="header-icon-wrapper">
+                    <Clock size={11} />
+                    <span>TERAKHIR UPDATE</span>
+                  </div>
+                </th>
                 <th className="center-text">AKSI</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={16} className="center-text" style={{ padding: '40px' }}>
+                  <td colSpan={17} className="center-text" style={{ padding: '40px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: 'var(--color-text-muted)' }}>
                       <Loader2 className="animate-spin" size={24} />
                       <span>Memuat data KPI...</span>
@@ -411,7 +435,7 @@ const StaffProgress = () => {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="center-text" style={{ padding: '40px', color: 'var(--color-text-muted)' }}>
+                  <td colSpan={17} className="center-text" style={{ padding: '40px', color: 'var(--color-text-muted)' }}>
                     Data KPI tidak ditemukan.
                   </td>
                 </tr>
@@ -504,6 +528,9 @@ const StaffProgress = () => {
                           {staff.status}
                         </Badge>
                       </td>
+                      <td className="center-text mono text-muted" data-label="Terakhir Update" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                        {formatDateTime(staff.updated_at)}
+                      </td>
                       <td className="center-text" data-label="Aksi">
                         <button className="icon-btn" title="Lihat Poin Detail" onClick={() => openDrawer(staff)}>
                           <Eye size={12} />
@@ -536,6 +563,11 @@ const StaffProgress = () => {
                 <span className="mono text-muted">{selectedStaff.id}</span>
               </div>
               <p style={{ margin: 0, color: 'var(--color-text-muted)' }}>{selectedStaff.branch}</p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '6px' }}>
+                <Clock size={14} style={{ color: 'var(--color-primary)' }} />
+                <span>Terakhir Diperbarui: <strong>{formatDateTime(selectedStaff.updated_at)}</strong></span>
+              </div>
 
               {selectedStaff.lain_lain_keterangan && (
                 <div style={{ 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import {
   Search, Building2, Users, Plus, Pencil, Trash2,
-  X, Loader2, CheckCircle2, GraduationCap, Save, AlertTriangle, Clock, Target
+  X, Loader2, CheckCircle2, GraduationCap, Save, Clock, Target
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './MdisgoMonitoring.css';
@@ -14,6 +14,8 @@ interface MdisgoBranch {
   training_date: string | null;
   members_accessed: number;
   total_members: number;
+  total_center: number;
+  accessed_center: number;
   status: string;
 }
 
@@ -22,7 +24,7 @@ const MdisgoMonitoring = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   // Last updated info
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState('');
   const [_savingInfo, setSavingInfo] = useState(false);
@@ -36,6 +38,8 @@ const MdisgoMonitoring = () => {
     training_date: '',
     members_accessed: 0,
     total_members: 0,
+    total_center: 0,
+    accessed_center: 0,
     status: 'Belum'
   });
   const [saving, setSaving] = useState(false);
@@ -74,7 +78,7 @@ const MdisgoMonitoring = () => {
           .select('value')
           .eq('key', 'mdisgo_last_updated')
           .single();
-        
+
         if (!settingError && settingData) {
           setLastUpdatedInfo(settingData.value);
         }
@@ -93,15 +97,14 @@ const MdisgoMonitoring = () => {
   // Summary calculations
   const totalBranches = data.length;
   const trainedBranches = data.filter(b => b.status !== 'Belum').length;
-  const belumBranches = data.filter(b => b.status === 'Belum').length;
   const totalMembers = data.reduce((acc, curr) => acc + (curr.members_accessed || 0), 0);
   const targetReachedBranches = data.filter(b => b.total_members && b.status !== 'Belum' && ((b.members_accessed / b.total_members) * 100) >= 20).length;
   const trainedData = data.filter(b => b.training_date);
   const latestDate = trainedData.length > 0
     ? trainedData.reduce((latest, curr) => {
-        const d = new Date(curr.training_date!);
-        return d > latest ? d : latest;
-      }, new Date(trainedData[0].training_date!))
+      const d = new Date(curr.training_date!);
+      return d > latest ? d : latest;
+    }, new Date(trainedData[0].training_date!))
     : null;
 
   const formatDate = (dateStr: string | null) => {
@@ -118,7 +121,7 @@ const MdisgoMonitoring = () => {
   // Modal handlers
   const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ branch_code: '', branch_name: '', training_date: '', members_accessed: 0, total_members: 0, status: 'Belum' });
+    setFormData({ branch_code: '', branch_name: '', training_date: '', members_accessed: 0, total_members: 0, total_center: 0, accessed_center: 0, status: 'Belum' });
     setShowModal(true);
   };
 
@@ -130,6 +133,8 @@ const MdisgoMonitoring = () => {
       training_date: item.training_date || '',
       members_accessed: item.members_accessed,
       total_members: item.total_members || 0,
+      total_center: item.total_center || 0,
+      accessed_center: item.accessed_center || 0,
       status: item.status
     });
     setShowModal(true);
@@ -154,6 +159,8 @@ const MdisgoMonitoring = () => {
         training_date: formData.training_date || null,
         members_accessed: formData.members_accessed,
         total_members: formData.total_members,
+        total_center: formData.total_center,
+        accessed_center: formData.accessed_center,
         status: formData.status
       };
 
@@ -205,9 +212,9 @@ const MdisgoMonitoring = () => {
       const { error } = await supabase
         .from('app_settings')
         .upsert({ key: 'mdisgo_last_updated', value: newDate, updated_at: new Date().toISOString() });
-      
+
       if (error) throw error;
-      
+
       setLastUpdatedInfo(newDate);
       setMessage({ type: 'success', text: 'Tanggal update berhasil disimpan.' });
     } catch (err: any) {
@@ -228,12 +235,20 @@ const MdisgoMonitoring = () => {
 
   return (
     <div className="mdisgo-container">
+      {isAdmin && (
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '8px', marginTop: '2px' }}>
+          <button className="btn btn-primary mdisgo-btn-add" onClick={openAddModal}>
+            <Plus size={12} />
+            <span>Tambah Cabang</span>
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="mdisgo-header">
         <div className="mdisgo-header-titles">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h1>MDISGO</h1>
-            <div 
+            <div
               className="mdisgo-update-badge"
               style={{ cursor: isAdmin ? 'pointer' : 'default' }}
               onClick={(e) => {
@@ -251,7 +266,7 @@ const MdisgoMonitoring = () => {
               <Clock size={12} />
               <span>Update Data: <strong>{lastUpdatedInfo ? new Date(lastUpdatedInfo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pilih Tanggal'}</strong></span>
               {isAdmin && (
-                <input 
+                <input
                   type="date"
                   className="mdisgo-hidden-date-input"
                   style={{ position: 'absolute', visibility: 'hidden' }}
@@ -263,14 +278,6 @@ const MdisgoMonitoring = () => {
             </div>
           </div>
           <span className="mdisgo-subtitle">Monitoring cabang yang telah mengikuti training MDISGO.</span>
-        </div>
-        <div className="mdisgo-header-actions">
-          {isAdmin && (
-            <button className="btn btn-primary mdisgo-btn-add" onClick={openAddModal}>
-              <Plus size={14} />
-              <span>Tambah Cabang</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -312,19 +319,8 @@ const MdisgoMonitoring = () => {
           </div>
           <div className="mdisgo-stat-info">
             <h4>Pencapaian Target</h4>
-            <div className="stat-value">{targetReachedBranches} <span style={{fontSize: '11px', fontWeight: 'normal', color: 'var(--color-text-muted)'}}>dari {totalBranches}</span></div>
+            <div className="stat-value">{targetReachedBranches} <span style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--color-text-muted)' }}>dari {totalBranches}</span></div>
             <div className="stat-sub">Sudah capai 20%</div>
-          </div>
-        </Card>
-
-        <Card className="mdisgo-stat-card">
-          <div className="mdisgo-stat-icon orange">
-            <AlertTriangle size={18} />
-          </div>
-          <div className="mdisgo-stat-info">
-            <h4>Belum Implementasi</h4>
-            <div className="stat-value">{belumBranches}</div>
-            <div className="stat-sub">Belum training</div>
           </div>
         </Card>
 
@@ -386,7 +382,9 @@ const MdisgoMonitoring = () => {
                   <th style={{ textAlign: 'center' }}>Member</th>
                   <th style={{ textAlign: 'center' }}>Anggota Akses</th>
                   <th style={{ textAlign: 'center' }}>Presentase</th>
-                  <th style={{ textAlign: 'center' }}>Status</th>
+                  <th style={{ textAlign: 'center' }}>Center Login</th>
+                  <th style={{ textAlign: 'center' }}>Total Center</th>
+                  <th style={{ textAlign: 'center' }}>Cakupan Center (%)</th>
                   {isAdmin && <th style={{ width: '50px', textAlign: 'right' }}>Aksi</th>}
                 </tr>
               </thead>
@@ -422,7 +420,7 @@ const MdisgoMonitoring = () => {
                         let colorClass = 'red';
                         if (percentage >= 20) colorClass = 'green';
                         else if (percentage >= 15) colorClass = 'yellow';
-                        
+
                         return (
                           <div className="mdisgo-progress-wrapper">
                             <div className="mdisgo-progress-text">
@@ -435,16 +433,32 @@ const MdisgoMonitoring = () => {
                         );
                       })()}
                     </td>
-                    <td style={{ textAlign: 'center' }} data-label="Status">
+                    <td style={{ textAlign: 'center' }} data-label="Center Login">
+                      <span className="mdisgo-center-val">
+                        {branch.accessed_center !== null && branch.accessed_center !== undefined ? branch.accessed_center.toLocaleString('id-ID') : '0'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }} data-label="Total Center">
+                      <span className="mdisgo-center-val">
+                        {branch.total_center ? branch.total_center.toLocaleString('id-ID') : '-'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }} data-label="Cakupan Center (%)">
                       {(() => {
-                        if (branch.status === 'Belum') return <span className="mdisgo-status belum"><span className="mdisgo-status-dot"></span>Belum Training</span>;
-                        const percentage = branch.total_members ? (branch.members_accessed / branch.total_members) * 100 : 0;
-                        const isReached = percentage >= 20;
+                        if (!branch.total_center || branch.status === 'Belum') return <span className="mdisgo-center-val">-</span>;
+                        const cakupan = (branch.accessed_center / branch.total_center) * 100;
+                        let colorClass = 'red';
+                        if (cakupan >= 20) colorClass = 'green';
+                        else if (cakupan >= 15) colorClass = 'yellow';
                         return (
-                          <span className={`mdisgo-status ${isReached ? 'tercapai' : 'belum-tercapai'}`}>
-                            <span className="mdisgo-status-dot"></span>
-                            {isReached ? 'Tercapai' : 'Belum Tercapai'}
-                          </span>
+                          <div className="mdisgo-progress-wrapper">
+                            <div className="mdisgo-progress-text">
+                              {cakupan.toFixed(1)}% {cakupan >= 20 && <CheckCircle2 size={12} className="mdisgo-progress-check" />}
+                            </div>
+                            <div className="mdisgo-progress-bg">
+                              <div className={`mdisgo-progress-fill ${colorClass}`} style={{ width: `${Math.min(cakupan, 100)}%` }}></div>
+                            </div>
+                          </div>
                         );
                       })()}
                     </td>
@@ -478,65 +492,100 @@ const MdisgoMonitoring = () => {
             </div>
 
             <div className="mdisgo-modal-body">
-              <div className="mdisgo-form-row">
-                <div className="mdisgo-form-group">
-                  <label>Kode Cabang</label>
-                  <input
-                    type="text"
-                    placeholder="007"
-                    value={formData.branch_code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, branch_code: e.target.value }))}
-                  />
+              {/* Group 1: Informasi Cabang */}
+              <div className="mdisgo-form-section">
+                <h4 className="mdisgo-section-title">Informasi Cabang</h4>
+                <div className="mdisgo-form-row">
+                  <div className="mdisgo-form-group">
+                    <label>Kode Cabang</label>
+                    <input
+                      type="text"
+                      placeholder="007"
+                      value={formData.branch_code}
+                      onChange={(e) => setFormData(prev => ({ ...prev, branch_code: e.target.value }))}
+                    />
+                  </div>
+                  <div className="mdisgo-form-group">
+                    <label>Nama Cabang</label>
+                    <input
+                      type="text"
+                      placeholder="BANTUL"
+                      value={formData.branch_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, branch_name: e.target.value }))}
+                    />
+                  </div>
                 </div>
-                <div className="mdisgo-form-group">
-                  <label>Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  >
-                    <option value="Belum">Belum</option>
-                    <option value="Active">Active</option>
-                    <option value="Completed">Completed</option>
-                  </select>
+
+                <div className="mdisgo-form-row">
+                  <div className="mdisgo-form-group">
+                    <label>Status Training</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                    >
+                      <option value="Belum">Belum</option>
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <div className="mdisgo-form-group">
+                    <label>Tanggal Training</label>
+                    <input
+                      type="date"
+                      value={formData.training_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, training_date: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="mdisgo-form-group">
-                <label>Nama Cabang</label>
-                <input
-                  type="text"
-                  placeholder="BANTUL"
-                  value={formData.branch_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, branch_name: e.target.value }))}
-                />
+              {/* Group 2: Data Member */}
+              <div className="mdisgo-form-section">
+                <h4 className="mdisgo-section-title">Data Member (Anggota)</h4>
+                <div className="mdisgo-form-row">
+                  <div className="mdisgo-form-group">
+                    <label>Total Member</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.total_members}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_members: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="mdisgo-form-group">
+                    <label>Anggota Akses</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.members_accessed}
+                      onChange={(e) => setFormData(prev => ({ ...prev, members_accessed: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="mdisgo-form-row">
-                <div className="mdisgo-form-group">
-                  <label>Tanggal Training</label>
-                  <input
-                    type="date"
-                    value={formData.training_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, training_date: e.target.value }))}
-                  />
-                </div>
-                <div className="mdisgo-form-group">
-                  <label>Total Member Cabang</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.total_members}
-                    onChange={(e) => setFormData(prev => ({ ...prev, total_members: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
-                <div className="mdisgo-form-group">
-                  <label>Jumlah Akses Anggota</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.members_accessed}
-                    onChange={(e) => setFormData(prev => ({ ...prev, members_accessed: parseInt(e.target.value) || 0 }))}
-                  />
+              {/* Group 3: Data Center */}
+              <div className="mdisgo-form-section">
+                <h4 className="mdisgo-section-title">Data Center</h4>
+                <div className="mdisgo-form-row">
+                  <div className="mdisgo-form-group">
+                    <label>Center Login</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.accessed_center}
+                      onChange={(e) => setFormData(prev => ({ ...prev, accessed_center: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="mdisgo-form-group">
+                    <label>Total Center</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.total_center}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_center: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

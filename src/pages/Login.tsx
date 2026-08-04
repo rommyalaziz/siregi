@@ -1,28 +1,35 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
+  // Target destination after login
+  const fromLocation = (location.state as any)?.from;
+  const targetPath = fromLocation && fromLocation.pathname && fromLocation.pathname !== '/login' && fromLocation.pathname !== '/'
+    ? `${fromLocation.pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`
+    : '/dashboard';
+
   useEffect(() => {
     // Check if already logged in
     const session = sessionStorage.getItem('msa_session');
     if (session) {
-      navigate('/dashboard');
+      navigate(targetPath, { replace: true });
     }
 
     requestAnimationFrame(() => {
       setIsVisible(true);
     });
-  }, [navigate]);
+  }, [navigate, targetPath]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +67,7 @@ const Login = () => {
         user_agent: navigator.userAgent
       });
 
-      navigate('/dashboard');
+      navigate(targetPath, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat login');
     } finally {

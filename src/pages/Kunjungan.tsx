@@ -13,6 +13,8 @@ interface KunjunganCabang {
   nama_cabang: string;
   nama_msa: string;
   tanggal_kunjungan: string;
+  periode_start?: string;
+  periode_end?: string;
   c_folder_d_rapi: boolean;
   c_dok_surat_ceklist: boolean;
   n_kurang_surat_ceklist: number;
@@ -49,6 +51,8 @@ const defaultFormState: Omit<KunjunganCabang, 'id'> = {
   nama_cabang: '',
   nama_msa: '',
   tanggal_kunjungan: '',
+  periode_start: '',
+  periode_end: '',
   c_folder_d_rapi: false,
   c_dok_surat_ceklist: false,
   n_kurang_surat_ceklist: 0,
@@ -193,30 +197,73 @@ const Kunjungan = () => {
 
     setSaving(true);
     try {
+      // Bersihkan payload — pastikan string kosong diubah ke null/0 agar tidak konflik dengan constraint DB
+      const sanitized: Record<string, any> = {
+        cabang_id: formData.cabang_id || null,
+        nama_cabang: formData.nama_cabang,
+        nama_msa: formData.nama_msa,
+        tanggal_kunjungan: formData.tanggal_kunjungan,
+        periode_start: formData.periode_start || null,
+        periode_end: formData.periode_end || null,
+        c_folder_d_rapi: formData.c_folder_d_rapi,
+        c_dok_surat_ceklist: formData.c_dok_surat_ceklist,
+        n_kurang_surat_ceklist: formData.n_kurang_surat_ceklist || 0,
+        c_dok_data_anggota: formData.c_dok_data_anggota,
+        n_kurang_data_anggota: formData.n_kurang_data_anggota || 0,
+        c_dok_anggota_keluar: formData.c_dok_anggota_keluar,
+        n_kurang_anggota_keluar: formData.n_kurang_anggota_keluar || 0,
+        c_dok_dana_resiko: formData.c_dok_dana_resiko,
+        n_kurang_dana_resiko: formData.n_kurang_dana_resiko || 0,
+        c_dok_sihara: formData.c_dok_sihara,
+        n_kurang_sihara: formData.n_kurang_sihara || 0,
+        c_dok_laporan_bulanan: formData.c_dok_laporan_bulanan,
+        n_kurang_laporan_bulanan: formData.n_kurang_laporan_bulanan || 0,
+        c_dok_lwk: formData.c_dok_lwk,
+        n_kurang_lwk: formData.n_kurang_lwk || 0,
+        c_pending_mdis: formData.c_pending_mdis,
+        c_briefing_buku_tamu: formData.c_briefing_buku_tamu,
+        c_kpa_akad: formData.c_kpa_akad,
+        c_stok_formulir: formData.c_stok_formulir,
+        c_sampling_phone: formData.c_sampling_phone,
+        c_penyimpangan_ada: formData.c_penyimpangan_ada,
+        c_maintenance_komputer: formData.c_maintenance_komputer,
+        c_stok_toner: formData.c_stok_toner,
+        c_fixed_asset: formData.c_fixed_asset,
+        catatan_kendala: formData.catatan_kendala || '',
+        tindak_lanjut: formData.tindak_lanjut || '',
+        kesimpulan: formData.kesimpulan || '',
+        catatan_cabang_terdekat: formData.catatan_cabang_terdekat || '',
+        status_laporan: formData.status_laporan || 'Draft',
+        updated_at: new Date().toISOString(),
+      };
+
       if (editingItem) {
         const { error } = await supabase
           .from('kunjungan_cabang')
-          .update(formData)
+          .update(sanitized)
           .eq('id', editingItem.id);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Data kunjungan berhasil diupdate.' });
       } else {
         const { error } = await supabase
           .from('kunjungan_cabang')
-          .insert([formData]);
+          .insert([sanitized]);
         if (error) {
-          if (error.code === '23505') { // unique violation
+          if (error.code === '23505') {
             throw new Error('Data kunjungan untuk cabang dan tanggal tersebut sudah ada.');
           }
-          throw error;
+          // Tampilkan pesan lengkap dari Supabase untuk memudahkan debug
+          const detailMsg = [error.message, error.details, error.hint].filter(Boolean).join(' | ');
+          throw new Error(detailMsg || 'Gagal insert ke database.');
         }
         setMessage({ type: 'success', text: 'Data kunjungan berhasil ditambahkan.' });
       }
       closeModal();
       fetchData();
     } catch (err: any) {
-      console.error('Save error:', err);
-      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan data.' });
+      console.error('Save error FULL:', JSON.stringify(err, null, 2));
+      const msg = err?.message || err?.details || err?.hint || JSON.stringify(err) || 'Gagal menyimpan data.';
+      setMessage({ type: 'error', text: msg });
     } finally {
       setSaving(false);
     }
@@ -760,6 +807,26 @@ const Kunjungan = () => {
                     <div className="kj-checklist-sub-title">A. Backup & Arsip Digital</div>
                     {renderChecklistItem('Struktur folder D:\\ sudah rapi sesuai ketentuan?', 'c_folder_d_rapi')}
                     
+                    <div className="kj-form-row" style={{ marginTop: '6px', marginBottom: '8px', gap: '8px', display: 'flex' }}>
+                      <div className="kj-form-group" style={{ marginBottom: 0, flex: 1 }}>
+                        <label style={{ fontSize: '9px' }}>Periode Dari</label>
+                        <input 
+                          type="date" 
+                          value={formData.periode_start || ''}
+                          onChange={(e) => setFormData({...formData, periode_start: e.target.value})}
+                          style={{ padding: '4px', fontSize: '11px', height: '26px' }}
+                        />
+                      </div>
+                      <div className="kj-form-group" style={{ marginBottom: 0, flex: 1 }}>
+                        <label style={{ fontSize: '9px' }}>Sampai</label>
+                        <input 
+                          type="date" 
+                          value={formData.periode_end || ''}
+                          onChange={(e) => setFormData({...formData, periode_end: e.target.value})}
+                          style={{ padding: '4px', fontSize: '11px', height: '26px' }}
+                        />
+                      </div>
+                    </div>
                     <div className="kj-checklist-sub-title" style={{ marginTop: '8px', fontSize: '10px' }}>Dokumen Harian Sudah Discan:</div>
                     {renderDocChecklistItem('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
                     {renderDocChecklistItem('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota', true)}
@@ -772,7 +839,7 @@ const Kunjungan = () => {
 
                   {/* Kategori 2, 3, 4, 5 */}
                   <div className="kj-checklist-grid">
-                    <div className="kj-checklist-sub-title">B. MDISMO & Sistem</div>
+                    <div className="kj-checklist-sub-title">B. MDIS</div>
                     {renderChecklistItem('Inputan Pending mdis', 'c_pending_mdis')}
 
                     <div className="kj-checklist-sub-title" style={{marginTop: '12px'}}>C. Operasional Harian</div>
@@ -803,38 +870,36 @@ const Kunjungan = () => {
                   />
                 </div>
                 <div className="kj-form-group">
-                  <label>Tindak Lanjut / Rekomendasi</label>
+                  <label>Usulan</label>
                   <textarea 
                     placeholder="Tindakan yang perlu dilakukan..."
                     value={formData.tindak_lanjut}
                     onChange={(e) => setFormData({...formData, tindak_lanjut: e.target.value})}
                   />
                 </div>
+                <div className="kj-form-group">
+                  <label>Rekomendasi</label>
+                  <textarea 
+                    placeholder="Kesimpulan kunjungan..."
+                    value={formData.kesimpulan}
+                    onChange={(e) => setFormData({...formData, kesimpulan: e.target.value})}
+                  />
+                </div>
+                <div className="kj-form-group">
+                  <label>Informasi 3 Cabang Terdekat</label>
+                  <textarea 
+                    placeholder="Tuliskan informasi 3 cabang terdekat..."
+                    value={formData.catatan_cabang_terdekat}
+                    onChange={(e) => setFormData({...formData, catatan_cabang_terdekat: e.target.value})}
+                  />
+                </div>
                 <div className="kj-form-row">
-                  <div className="kj-form-group">
-                    <label>Kesimpulan Akhir</label>
-                    <textarea 
-                      placeholder="Kesimpulan kunjungan..."
-                      value={formData.kesimpulan}
-                      style={{ minHeight: '40px' }}
-                      onChange={(e) => setFormData({...formData, kesimpulan: e.target.value})}
-                    />
-                  </div>
-                  <div className="kj-form-group">
-                    <label>Informasi 3 Cabang Terdekat</label>
-                    <textarea 
-                      placeholder="Tuliskan informasi 3 cabang terdekat..."
-                      value={formData.catatan_cabang_terdekat}
-                      style={{ minHeight: '40px' }}
-                      onChange={(e) => setFormData({...formData, catatan_cabang_terdekat: e.target.value})}
-                    />
-                  </div>
-                  <div className="kj-form-group">
+                  <div className="kj-form-group" style={{ maxWidth: '300px' }}>
                     <label>Status Laporan <span className="required">*</span></label>
                     <select 
                       value={formData.status_laporan}
                       onChange={(e) => setFormData({...formData, status_laporan: e.target.value})}
-                      style={{ height: '100%' }}
+                      style={{ height: '36px' }}
                     >
                       <option value="Draft">Draft</option>
                       <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut</option>
@@ -909,6 +974,11 @@ const Kunjungan = () => {
                     <div>
                       <strong style={{ fontSize: '9px', display: 'block', marginBottom: '2px' }}>A. Backup & Arsip Digital</strong>
                       {renderDetailChecklist('Folder D:\\ rapi', 'c_folder_d_rapi')}
+                      {(editingItem.periode_start || editingItem.periode_end) && (
+                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#1E293B', marginBottom: '4px', marginTop: '4px' }}>
+                          Periode: {editingItem.periode_start ? new Date(editingItem.periode_start).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'} s/d {editingItem.periode_end ? new Date(editingItem.periode_end).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                        </div>
+                      )}
                       <span style={{ fontSize: '8px', color: '#666', marginTop: '4px', display: 'block' }}>Dokumen Harian Discan:</span>
                       {renderDetailDocChecklist('Surat Masuk & Keluar', 'c_dok_surat_ceklist', 'n_kurang_surat_ceklist')}
                       {renderDetailDocChecklist('Data Anggota', 'c_dok_data_anggota', 'n_kurang_data_anggota', true)}
@@ -918,7 +988,7 @@ const Kunjungan = () => {
                       {renderDetailDocChecklist('Laporan Bulanan', 'c_dok_laporan_bulanan', 'n_kurang_laporan_bulanan')}
                       {renderDetailDocChecklist('Data LWK', 'c_dok_lwk', 'n_kurang_lwk')}
                       
-                      <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>B. MDISMO & Sistem</strong>
+                      <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>B. MDIS</strong>
                       {renderDetailChecklist('Inputan Pending mdis', 'c_pending_mdis')}
                     </div>
                     <div>
@@ -929,7 +999,7 @@ const Kunjungan = () => {
 
                       <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>D. Kontrol & Kepatuhan</strong>
                       {renderDetailChecklist('Sampling by Phone', 'c_sampling_phone')}
-                      {renderDetailChecklist('Ada Penyimpangan', 'c_penyimpangan_ada', true)}
+                      {renderDetailChecklist(editingItem.c_penyimpangan_ada ? 'Ada Penyimpangan' : 'Tidak Ada Penyimpangan', 'c_penyimpangan_ada', true)}
 
                       <strong style={{ fontSize: '9px', display: 'block', margin: '6px 0 2px' }}>E. Aset & IT</strong>
                       {renderDetailChecklist('Maintenance Komputer', 'c_maintenance_komputer')}
@@ -946,11 +1016,11 @@ const Kunjungan = () => {
                     <div className="kj-detail-text">{editingItem.catatan_kendala || '-'}</div>
                   </div>
                   <div className="kj-form-group">
-                    <label>Tindak Lanjut / Rekomendasi</label>
+                    <label>Usulan</label>
                     <div className="kj-detail-text">{editingItem.tindak_lanjut || '-'}</div>
                   </div>
                   <div className="kj-form-group">
-                    <label>Kesimpulan Akhir</label>
+                    <label>Rekomendasi</label>
                     <div className="kj-detail-text">{editingItem.kesimpulan || '-'}</div>
                   </div>
                   <div className="kj-form-group">
@@ -960,10 +1030,16 @@ const Kunjungan = () => {
                 </div>
                 
                 {/* Print Signatures Placeholder */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', padding: '0 10px' }} className="print-signatures">
-                  <div style={{ textAlign: 'center', width: '180px' }}>
-                    <p style={{ marginBottom: '40px', fontSize: '10px' }}>Mengetahui,<br/>MSA / FSA</p>
-                    <p style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '10px', width: '120px', margin: '0 auto' }}>{editingItem.nama_msa}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', padding: '0 20px' }} className="print-signatures">
+                  <div style={{ textAlign: 'left', width: '200px' }}>
+                    <p style={{ fontSize: '10px', marginBottom: '60px' }}>Mengetahui,</p>
+                    <p style={{ fontSize: '10px', fontWeight: 'bold', textDecoration: 'underline' }}>{editingItem.nama_msa}</p>
+                    <p style={{ fontSize: '10px', marginTop: '2px' }}>MSA / FSA</p>
+                  </div>
+                  <div style={{ textAlign: 'left', width: '200px' }}>
+                    <p style={{ fontSize: '10px', marginBottom: '60px' }}>Diperiksa,</p>
+                    <p style={{ fontSize: '10px', fontWeight: 'bold', textDecoration: 'underline' }}>Rommy Al Aziz</p>
+                    <p style={{ fontSize: '10px', marginTop: '2px' }}>MIS Regional I</p>
                   </div>
                 </div>
               </div>

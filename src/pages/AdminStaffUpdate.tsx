@@ -44,10 +44,27 @@ const AdminStaffUpdate = () => {
   const [initLoading, setInitLoading] = useState(false);
   const [initResult, setInitResult] = useState<{ created: number; skipped: number } | null>(null);
 
-  // Edit Profil State
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ name: '', branch: '' });
   const [editProfileLoading, setEditProfileLoading] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+
+  const formatDateTime = (dateString?: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).replace('.', ':');
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   const categories = [
     { id: 'release_voucher', name: 'Release Voucher' },
@@ -106,15 +123,46 @@ const AdminStaffUpdate = () => {
     fetchRecentActivity();
   }, []);
 
-  const fetchRecentActivity = async () => {
+  const fetchRecentActivity = async (staffId?: string, periode?: string, tahun?: string) => {
     try {
+      // Gunakan parameter yang diberikan, atau fallback ke state saat ini
+      const filterStaffId = staffId || selectedStaffId;
+      const filterPeriode = periode || selectedPeriode;
+      const filterTahun = tahun || selectedTahun;
+
+      // Jika belum ada staf/periode yang dipilih, kosongkan riwayat
+      if (!filterStaffId || !filterPeriode) {
+        setRecentActivity([]);
+        return;
+      }
+
+      let result: any[] = [];
+
       const { data, error } = await supabase
         .from('staff_progress')
         .select('name, branch, periode, tahun, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      setRecentActivity(data || []);
+        .eq('id', filterStaffId)
+        .eq('periode', filterPeriode)
+        .eq('tahun', parseInt(filterTahun))
+        .limit(1);
+
+      if (error && (error.message?.includes('updated_at') || error.code === '42703')) {
+        // Kolom updated_at belum ada di DB — fallback tanpa kolom tersebut
+        const fallback = await supabase
+          .from('staff_progress')
+          .select('name, branch, periode, tahun')
+          .eq('id', filterStaffId)
+          .eq('periode', filterPeriode)
+          .eq('tahun', parseInt(filterTahun))
+          .limit(1);
+        result = fallback.data || [];
+      } else if (error) {
+        throw error;
+      } else {
+        result = data || [];
+      }
+
+      setRecentActivity(result);
     } catch (err) {
       console.error('Error fetching activity:', err);
     }
@@ -162,6 +210,7 @@ const AdminStaffUpdate = () => {
             lain_lain_keterangan: data.lain_lain_keterangan || ''
           });
           setAvatarPreview(data.avatar_url || persistentAvatar);
+          setLastUpdatedAt(data.updated_at || null);
         } else {
           setFormData({
             release_voucher: 0, unapprove_pengajuan: 0, recalculate_delinquency: 0,
@@ -170,6 +219,7 @@ const AdminStaffUpdate = () => {
             lain_lain_keterangan: ''
           });
           setAvatarPreview(persistentAvatar);
+          setLastUpdatedAt(null);
         }
         setAvatarFile(null); // Reset pending file
       } catch (err) {
@@ -180,6 +230,7 @@ const AdminStaffUpdate = () => {
     };
 
     fetchCurrentValues();
+    fetchRecentActivity(selectedStaffId, selectedPeriode, selectedTahun);
   }, [selectedStaffId, selectedPeriode, selectedTahun]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,7 +284,8 @@ const AdminStaffUpdate = () => {
           avatar_url = publicUrl;
       }
       
-      const payload = {
+      const nowIso = new Date().toISOString();
+      const payload: Record<string, any> = {
         id: selectedStaffId,
         periode: selectedPeriode,
         tahun: parseInt(selectedTahun),
@@ -242,6 +294,10 @@ const AdminStaffUpdate = () => {
         avatar_url,
         ...formData
       };
+      // Tambahkan updated_at hanya jika kolom sudah ada di DB (tidak akan error kalau belum ada trigger)
+      // Kolom ini akan di-set otomatis oleh trigger setelah SQL add_updated_at.sql dijalankan.
+      // Kita tetap kirim supaya langsung terupdate tanpa menunggu trigger.
+      try { payload.updated_at = nowIso; } catch(_) {}
 
       console.log('Sending payload:', payload);
 
@@ -263,14 +319,19 @@ const AdminStaffUpdate = () => {
         console.log('Avatar synced globally for staff:', selectedStaffId);
       }
 
+      setLastUpdatedAt(nowIso);
       setMessage({ type: 'success', text: `Data ${staffInfo?.name} berhasil diperbarui.` });
       setAvatarFile(null);
-      fetchRecentActivity();
+      fetchRecentActivity(selectedStaffId, selectedPeriode, selectedTahun);
     } catch (err: any) {
       console.error('Final Caught Error:', err);
-      // If it's the RLS error, give a more helpful instruction
       const errorMsg = err.message || 'Gagal memperbarui data';
-      if (errorMsg.includes('row-level security')) {
+      if (errorMsg.includes('updated_at') || errorMsg.includes('schema cache')) {
+        setMessage({
+          type: 'error',
+          text: '⚠️ Kolom updated_at belum ada di database. Jalankan SQL di sql/add_updated_at.sql di Supabase Dashboard terlebih dahulu!'
+        });
+      } else if (errorMsg.includes('row-level security')) {
         setMessage({ 
           type: 'error', 
           text: 'Database masih menolak akses (RLS). Pastikan Anda sudah menjalankan SQL Super Reset di Supabase Dashboard.' 
@@ -358,6 +419,7 @@ const AdminStaffUpdate = () => {
       }
 
       // 4. Batch insert dengan nilai default 0
+      const nowIso = new Date().toISOString();
       const payload = toCreate.map(s => ({
         id: s.id,
         name: s.name,
@@ -374,7 +436,8 @@ const AdminStaffUpdate = () => {
         validasi: 0,
         tiket_perbaikan: 0,
         lain_lain: 0,
-        lain_lain_keterangan: ''
+        lain_lain_keterangan: '',
+        updated_at: nowIso
       }));
 
       const { error: insertErr } = await supabase
@@ -391,7 +454,7 @@ const AdminStaffUpdate = () => {
       });
 
       // Refresh staff list & activity
-      fetchRecentActivity();
+      fetchRecentActivity(toCreate.length > 0 ? toCreate[0].id : selectedStaffId, selectedPeriode, selectedTahun);
 
       // Auto-pilih staff pertama yang baru dibuat
       if (toCreate.length > 0) {
@@ -432,9 +495,10 @@ const AdminStaffUpdate = () => {
     
     setEditProfileLoading(true);
     try {
+      const nowIso = new Date().toISOString();
       const { error } = await supabase
         .from('staff_progress')
-        .update({ name: editProfileData.name, branch: editProfileData.branch })
+        .update({ name: editProfileData.name, branch: editProfileData.branch, updated_at: nowIso })
         .eq('id', selectedStaffId);
 
       if (error) throw error;
@@ -448,7 +512,7 @@ const AdminStaffUpdate = () => {
       
       setMessage({ type: 'success', text: `Profil staf berhasil diperbarui menjadi ${editProfileData.name} (${editProfileData.branch}).` });
       setEditProfileModalOpen(false);
-      fetchRecentActivity();
+      fetchRecentActivity(selectedStaffId, selectedPeriode, selectedTahun);
     } catch (err: any) {
       alert('Gagal memperbarui profil: ' + (err.message || 'Unknown error'));
     } finally {
@@ -674,6 +738,26 @@ const AdminStaffUpdate = () => {
 
           <form onSubmit={handleUpdate} style={{ padding: '20px' }}>
             
+            {/* LAST UPDATED TIMESTAMP BADGE */}
+            {lastUpdatedAt && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                fontSize: '12px', 
+                color: '#334155', 
+                marginBottom: '16px', 
+                padding: '8px 12px', 
+                background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', 
+                borderRadius: '8px', 
+                border: '1px solid #cbd5e1',
+                fontWeight: 500
+              }}>
+                <Clock size={15} style={{ color: '#4f46e5' }} />
+                <span>Terakhir Diperbarui: <strong style={{ color: '#0f172a' }}>{formatDateTime(lastUpdatedAt)}</strong></span>
+              </div>
+            )}
+
             {/* SUCCESS/ERROR MESSAGE */}
             {message.text && (
               <div style={{ 
@@ -801,7 +885,9 @@ const AdminStaffUpdate = () => {
           <div style={{ display: 'grid', gap: '8px' }}>
             {recentActivity.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', background: 'var(--color-bg-card)', borderRadius: '12px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', fontSize: '13px' }}>
-                Belum ada aktivitas update tercatat.
+                {!selectedStaffId || !selectedPeriode
+                  ? 'Pilih staf dan periode untuk melihat riwayat.'
+                  : 'Data staf ini belum tersimpan untuk periode yang dipilih.'}
               </div>
             ) : (
               recentActivity.map((activity, idx) => (
@@ -824,12 +910,7 @@ const AdminStaffUpdate = () => {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-primary)' }}>Berhasil Diperbarui</div>
                     <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                      {new Date(activity.updated_at || Date.now()).toLocaleString('id-ID', { 
-                        day: '2-digit', 
-                        month: 'short', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
+                      {formatDateTime(activity.updated_at)}
                     </div>
                   </div>
                 </div>

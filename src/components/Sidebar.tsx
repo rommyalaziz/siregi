@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck, ClipboardList, BarChart2 } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import { supabase } from '../lib/supabase';
 import './Sidebar.css';
@@ -21,9 +21,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [arsipOpen, setArsipOpen] = React.useState(isArsipActive);
   const arsipSubmenuRef = useRef<HTMLDivElement>(null);
 
+  // MDISGO accordion state
+  const mdisgoRoutes = ['/mdisgo', '/mdisgo/survey'];
+  const isMdisgoActive = mdisgoRoutes.some(r => location.pathname.startsWith(r));
+  const [mdisgoOpen, setMdisgoOpen] = React.useState(isMdisgoActive);
+  const mdisgoSubmenuRef = useRef<HTMLDivElement>(null);
+
   // Keep accordion open if navigating to an arsip route
   useEffect(() => {
     if (isArsipActive) setArsipOpen(true);
+  }, [location.pathname]);
+
+  // Keep MDISGO accordion open if navigating to an mdisgo route
+  useEffect(() => {
+    if (isMdisgoActive) setMdisgoOpen(true);
   }, [location.pathname]);
 
   // Close sidebar on route change (mobile)
@@ -191,10 +202,56 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </NavLink>
           </div>
         </div>
-        <NavLink to="/mdisgo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <GraduationCap size={16} />
-          <span>MDISGO</span>
-        </NavLink>
+        {/* ── MDISGO Accordion ── */}
+        <div className="nav-group">
+          <button
+            className={`nav-item nav-group-trigger ${isMdisgoActive ? 'active' : ''}`}
+            onClick={() => setMdisgoOpen(prev => !prev)}
+            aria-expanded={mdisgoOpen}
+          >
+            <GraduationCap size={16} />
+            <span>MDISGO</span>
+            <ChevronDown
+              size={14}
+              className={`nav-chevron ${mdisgoOpen ? 'nav-chevron--open' : ''}`}
+            />
+          </button>
+
+          <div
+            ref={mdisgoSubmenuRef}
+            className="nav-submenu"
+            style={{
+              maxHeight: mdisgoOpen
+                ? `${mdisgoSubmenuRef.current?.scrollHeight ?? 200}px`
+                : '0px',
+            }}
+          >
+            <NavLink
+              to="/mdisgo"
+              end
+              className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+            >
+              <BarChart2 size={13} />
+              <span>Monitoring MDISGO</span>
+            </NavLink>
+            <NavLink
+              to="/mdisgo/survey"
+              className={({ isActive }) => `nav-subitem ${isActive || location.pathname.startsWith('/mdisgo/survey') ? 'active' : ''}`}
+            >
+              <ClipboardList size={13} />
+              <span>Survey MDISGO</span>
+            </NavLink>
+            {isAdmin && (
+              <NavLink
+                to="/mdisgo/survey/rekap"
+                className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+              >
+                <BarChart2 size={13} />
+                <span>Rekap Survey</span>
+              </NavLink>
+            )}
+          </div>
+        </div>
 
         <button 
           onClick={() => setIsKpiModalOpen(true)} 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
@@ -9,6 +9,9 @@ import StaffProgress from './pages/StaffProgress';
 import AdminStaffUpdate from './pages/AdminStaffUpdate';
 import DetailedReport from './pages/DetailedReport';
 import MdisgoMonitoring from './pages/MdisgoMonitoring';
+import SurveyMdisgo from './pages/SurveyMdisgo';
+import SurveyMdisgoForm from './pages/SurveyMdisgoForm';
+import SurveyMdisgoRekap from './pages/SurveyMdisgoRekap';
 import Kunjungan from './pages/Kunjungan';
 import DataUser from './pages/DataUser';
 import RekapPengeluaran from './pages/RekapPengeluaran';
@@ -21,9 +24,10 @@ import { useActivityTracker } from './hooks/useActivityTracker';
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const session = sessionStorage.getItem('msa_session');
+  const location = useLocation();
   
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
@@ -74,6 +78,10 @@ function AppContent() {
         <Route path="/staff" element={<StaffProgress />} />
         <Route path="/reports" element={<DetailedReport />} />
         <Route path="/mdisgo" element={<MdisgoMonitoring />} />
+        {/* Survey MDISGO Module */}
+        <Route path="/mdisgo/survey" element={<SurveyMdisgo />} />
+        <Route path="/mdisgo/survey/form" element={<SurveyMdisgoForm />} />
+        <Route path="/mdisgo/survey/rekap" element={<AdminRoute><SurveyMdisgoRekap /></AdminRoute>} />
         <Route path="/kunjungan" element={<SuperAdminRoute><Kunjungan /></SuperAdminRoute>} />
         <Route path="/admin/update" element={<SuperAdminRoute><AdminStaffUpdate /></SuperAdminRoute>} />
         <Route path="/admin/data-user" element={<AdminRoute><DataUser /></AdminRoute>} />

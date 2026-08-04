@@ -82,30 +82,31 @@
 }
 
 .mdisgo-btn-add {
-  padding: 6px 14px;
-  font-size: 11px;
+  padding: 3px 8px;
+  font-size: 10px;
   background-color: var(--color-primary, #3B82F6);
   color: white;
-  border-radius: 6px;
+  border-radius: 4px;
   border: none;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  height: 22px;
 }
 .mdisgo-btn-add:hover {
   filter: brightness(0.9);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transform: translateY(-0.5px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
 /* Summary Stat Cards — Dense Mode */
 .mdisgo-stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px; /* Reduced gap further */
 }
 
@@ -308,6 +309,40 @@
 .mdisgo-status.belum-tercapai .mdisgo-status-dot { background-color: #EF4444; }
 .mdisgo-status.belum .mdisgo-status-dot { background-color: #F59E0B; }
 
+/* Numeric status badge */
+.mdisgo-status-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+.mdisgo-status-num.tercapai {
+  background-color: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+.mdisgo-status-num.belum-tercapai {
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+.mdisgo-status-num.belum {
+  background-color: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+/* Center value */
+.mdisgo-center-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
 /* Row data cells */
 .mdisgo-row-num {
   color: var(--color-text-muted);
@@ -463,6 +498,28 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Form Grouping Sections */
+.mdisgo-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--color-bg-main);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.mdisgo-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-primary, #3B82F6);
+  letter-spacing: 0.5px;
+  margin: 0 0 2px 0;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: 2px;
 }
 
 .mdisgo-form-row {
