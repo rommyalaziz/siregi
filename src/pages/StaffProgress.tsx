@@ -592,7 +592,7 @@ const StaffProgress = () => {
             {!loading && filteredStaff.length > 0 && (
               <tfoot>
                 <tr className="total-footer-row">
-                  <td className="total-label center-text" colSpan={4} data-label="">TOTAL</td>
+                  <td className="total-label center-text" colSpan={5} data-label="">TOTAL</td>
                   <td className="total-value" data-label="Release Voucher">{totalRV > 0 ? totalRV : '-'}</td>
                   <td className="total-value" data-label="Unapprove Pengajuan">{totalUP > 0 ? totalUP : '-'}</td>
                   <td className="total-value" data-label="Recalculate Delinquency">{totalRD > 0 ? totalRD : '-'}</td>
