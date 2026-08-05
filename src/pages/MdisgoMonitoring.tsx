@@ -231,7 +231,7 @@ const MdisgoMonitoring = () => {
     const headers = [
       'No', 'Kode', 'Nama Cabang', 'Tanggal Training',
       'Total Member', 'Anggota Akses', 'Presentase (%)',
-      'Center Login', 'Center Lock Penarikan', 'Total Center', 'Cakupan Center (%)'
+      'Center Login', 'Center Lock Penarikan', 'Total Center', 'Cakupan Center (%)', 'Lock Center (%)'
     ];
 
     const rows = filteredData.map((b, idx) => {
@@ -240,6 +240,9 @@ const MdisgoMonitoring = () => {
         : '-';
       const cakupan = b.total_center && b.status !== 'Belum'
         ? ((b.accessed_center / b.total_center) * 100).toFixed(1)
+        : '-';
+      const lockPct = b.total_center && b.status !== 'Belum'
+        ? (((b.locked_center || 0) / b.total_center) * 100).toFixed(1)
         : '-';
       return [
         idx + 1,
@@ -252,7 +255,8 @@ const MdisgoMonitoring = () => {
         b.accessed_center !== null && b.accessed_center !== undefined ? b.accessed_center : 0,
         b.locked_center !== null && b.locked_center !== undefined ? b.locked_center : 0,
         b.total_center || '-',
-        cakupan
+        cakupan,
+        lockPct
       ];
     });
 
@@ -432,6 +436,7 @@ const MdisgoMonitoring = () => {
                   <th style={{ textAlign: 'center' }}>Center Lock Penarikan</th>
                   <th style={{ textAlign: 'center' }}>Total Center</th>
                   <th style={{ textAlign: 'center' }}>Cakupan Center (%)</th>
+                  <th style={{ textAlign: 'center' }}>Lock Center (%)</th>
                   {isAdmin && <th style={{ width: '50px', textAlign: 'right' }}>Aksi</th>}
                 </tr>
               </thead>
@@ -509,6 +514,25 @@ const MdisgoMonitoring = () => {
                             </div>
                             <div className="mdisgo-progress-bg">
                               <div className={`mdisgo-progress-fill ${colorClass}`} style={{ width: `${Math.min(cakupan, 100)}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td style={{ textAlign: 'center' }} data-label="Lock Center (%)">
+                      {(() => {
+                        if (!branch.total_center || branch.status === 'Belum') return <span className="mdisgo-center-val">-</span>;
+                        const lockPct = ((branch.locked_center || 0) / branch.total_center) * 100;
+                        let colorClass = 'red';
+                        if (lockPct >= 20) colorClass = 'green';
+                        else if (lockPct >= 15) colorClass = 'yellow';
+                        return (
+                          <div className="mdisgo-progress-wrapper">
+                            <div className="mdisgo-progress-text">
+                              {lockPct.toFixed(1)}% {lockPct >= 20 && <CheckCircle2 size={12} className="mdisgo-progress-check" />}
+                            </div>
+                            <div className="mdisgo-progress-bg">
+                              <div className={`mdisgo-progress-fill ${colorClass}`} style={{ width: `${Math.min(lockPct, 100)}%` }}></div>
                             </div>
                           </div>
                         );
