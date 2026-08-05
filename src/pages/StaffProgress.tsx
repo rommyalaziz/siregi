@@ -248,12 +248,21 @@ const StaffProgress = () => {
 
   const handleExportCSV = () => {
     if (data.length === 0) return;
+
+    // Filtered data (same logic as the table display)
+    const exportData = data
+      .filter(s =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.id.includes(searchQuery)
+      )
+      .slice(0, (!searchQuery && selectedMonth !== 'Semua') ? 20 : undefined);
     
     // Header for CSV
     const headers = ["No", "Kode", "Cabang", "Nama Staf", "RV", "UP", "RD", "TP", "SG", "Minggon", "VAL", "TPK", "LL", "Point", "Grade", "Status", "Terakhir Update"];
     
     // Map data to rows
-    const rows = data.map((s, index) => [
+    const rows = exportData.map((s, index) => [
       index + 1,
       `"${s.id}"`, // Quote ID to prevent Excel from dropping leading zeros
       `"${s.branch}"`,
@@ -263,7 +272,7 @@ const StaffProgress = () => {
       s.recalculate_delinquency || 0,
       s.transfer_pencairan || 0,
       s.salah_generate || 0,
-      Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode)) ? (s.ppi_not_entry || 0) : 0, // Now "Minggon"
+      Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode)) ? (s.ppi_not_entry || 0) : 0,
       s.validasi || 0,
       s.tiket_perbaikan || 0,
       s.lain_lain || 0,
@@ -273,9 +282,32 @@ const StaffProgress = () => {
       `"${formatDateTime(s.updated_at)}"`
     ]);
 
+    // Compute TOTAL row for CSV
+    const csvTotalRV  = exportData.reduce((acc, s) => acc + (s.release_voucher || 0), 0);
+    const csvTotalUP  = exportData.reduce((acc, s) => acc + (s.unapprove_pengajuan || 0), 0);
+    const csvTotalRD  = exportData.reduce((acc, s) => acc + (s.recalculate_delinquency || 0), 0);
+    const csvTotalTP  = exportData.reduce((acc, s) => acc + (s.transfer_pencairan || 0), 0);
+    const csvTotalSG  = exportData.reduce((acc, s) => acc + (s.salah_generate || 0), 0);
+    const csvTotalVAL = exportData.reduce((acc, s) => acc + (s.validasi || 0), 0);
+    const csvTotalTPK = exportData.reduce((acc, s) => acc + (s.tiket_perbaikan || 0), 0);
+    const csvTotalLL  = exportData.reduce((acc, s) => acc + (s.lain_lain || 0), 0);
+    const csvCountMinggon = exportData.filter(s => {
+      const isMinggonMonth = Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+      return isMinggonMonth && (s.ppi_not_entry || 0) > 0;
+    }).length;
+
+    const totalRow = [
+      '', '', '', '"TOTAL"',
+      csvTotalRV, csvTotalUP, csvTotalRD, csvTotalTP, csvTotalSG,
+      `"COUNT : ${csvCountMinggon}"`,
+      csvTotalVAL, csvTotalTPK, csvTotalLL,
+      '', '', '', ''
+    ];
+
     const csvContent = [
       headers.join(","),
-      ...rows.map(e => e.join(","))
+      ...rows.map(e => e.join(",")),
+      totalRow.join(",")
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -288,6 +320,29 @@ const StaffProgress = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // ── Derived filtered list (used for both table render and totals) ──────────
+  const filteredStaff = data
+    .filter(s =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.id.includes(searchQuery)
+    )
+    .slice(0, (!searchQuery && selectedMonth !== 'Semua') ? 20 : undefined);
+
+  // ── Compute TOTAL row values from filteredStaff ──────────────────────────
+  const totalRV   = filteredStaff.reduce((acc, s) => acc + (s.release_voucher || 0), 0);
+  const totalUP   = filteredStaff.reduce((acc, s) => acc + (s.unapprove_pengajuan || 0), 0);
+  const totalRD   = filteredStaff.reduce((acc, s) => acc + (s.recalculate_delinquency || 0), 0);
+  const totalTP   = filteredStaff.reduce((acc, s) => acc + (s.transfer_pencairan || 0), 0);
+  const totalSG   = filteredStaff.reduce((acc, s) => acc + (s.salah_generate || 0), 0);
+  const totalVAL  = filteredStaff.reduce((acc, s) => acc + (s.validasi || 0), 0);
+  const totalTPK  = filteredStaff.reduce((acc, s) => acc + (s.tiket_perbaikan || 0), 0);
+  const totalLL   = filteredStaff.reduce((acc, s) => acc + (s.lain_lain || 0), 0);
+  const countMinggon = filteredStaff.filter(s => {
+    const isMinggonMonth = Number(s.tahun) > 2026 || (Number(s.tahun) === 2026 && ['Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].includes(s.periode));
+    return isMinggonMonth && (s.ppi_not_entry || 0) > 0;
+  }).length;
 
   return (
     <div className="page-container">
@@ -440,15 +495,7 @@ const StaffProgress = () => {
                   </td>
                 </tr>
               ) : (
-                data
-                  .filter(s => 
-                    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                    s.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    s.id.includes(searchQuery)
-                  )
-                  // Apply 20 staff limit for default view (specific month, no search)
-                  .slice(0, (!searchQuery && selectedMonth !== 'Semua') ? 20 : undefined)
-                  .map((staff, index) => {
+                filteredStaff.map((staff, index) => {
                   return (
                     <tr key={staff.id}>
                       <td className="center-text mono text-muted" data-label="No">{index + 1}</td>
@@ -541,6 +588,27 @@ const StaffProgress = () => {
                 })
               )}
             </tbody>
+            {/* ── TOTAL Footer Row ──────────────────────────────── */}
+            {!loading && filteredStaff.length > 0 && (
+              <tfoot>
+                <tr className="total-footer-row">
+                  <td className="total-label center-text" colSpan={4} data-label="">TOTAL</td>
+                  <td className="total-value" data-label="Release Voucher">{totalRV > 0 ? totalRV : '-'}</td>
+                  <td className="total-value" data-label="Unapprove Pengajuan">{totalUP > 0 ? totalUP : '-'}</td>
+                  <td className="total-value" data-label="Recalculate Delinquency">{totalRD > 0 ? totalRD : '-'}</td>
+                  <td className="total-value" data-label="Transfer Pencairan">{totalTP > 0 ? totalTP : '-'}</td>
+                  <td className="total-value" data-label="Salah Generate">{totalSG > 0 ? totalSG : '-'}</td>
+                  <td className="total-value minggon-count" data-label="Minggon" title={`${countMinggon} staf memiliki aktivitas Minggon`}>COUNT : {countMinggon}</td>
+                  <td className="total-value" data-label="Validasi">{totalVAL > 0 ? totalVAL : '-'}</td>
+                  <td className="total-value" data-label="Tiket Perbaikan">{totalTPK > 0 ? totalTPK : '-'}</td>
+                  <td className="total-value" data-label="Lain-lain">
+                    {totalLL === 0 ? '-' : totalLL > 0 ? `+${totalLL}` : totalLL}
+                  </td>
+                  {/* Point, Grade, Status, Update, Aksi — tidak dijumlahkan */}
+                  <td /><td /><td /><td /><td />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
         {data.length > 20 && !searchQuery && selectedMonth !== 'Semua' && (

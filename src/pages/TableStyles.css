@@ -378,3 +378,34 @@
     min-width: 36px;
   }
 }
+
+/* ===== Total Footer Row ===== */
+.total-footer-row td {
+  background-color: var(--color-bg-main, #f8fafc) !important;
+  border-top: 2px solid var(--color-border) !important;
+  font-weight: 700 !important;
+  color: var(--color-text-main) !important;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.total-footer-row td.total-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted) !important;
+}
+
+.total-footer-row td.total-value {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-text-main) !important;
+}
+
+.total-footer-row td.total-value.minggon-count {
+  font-size: 10px;
+  color: var(--color-primary, #6366f1) !important;
+}

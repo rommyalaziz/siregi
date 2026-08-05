@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import {
   Search, Building2, Users, Plus, Pencil, Trash2,
-  X, Loader2, CheckCircle2, GraduationCap, Save, Clock, Target
+  X, Loader2, CheckCircle2, GraduationCap, Save, Clock, Target, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './MdisgoMonitoring.css';
@@ -16,6 +16,7 @@ interface MdisgoBranch {
   total_members: number;
   total_center: number;
   accessed_center: number;
+  locked_center: number;
   status: string;
 }
 
@@ -40,6 +41,7 @@ const MdisgoMonitoring = () => {
     total_members: 0,
     total_center: 0,
     accessed_center: 0,
+    locked_center: 0,
     status: 'Belum'
   });
   const [saving, setSaving] = useState(false);
@@ -108,7 +110,7 @@ const MdisgoMonitoring = () => {
   // Modal handlers
   const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ branch_code: '', branch_name: '', training_date: '', members_accessed: 0, total_members: 0, total_center: 0, accessed_center: 0, status: 'Belum' });
+    setFormData({ branch_code: '', branch_name: '', training_date: '', members_accessed: 0, total_members: 0, total_center: 0, accessed_center: 0, locked_center: 0, status: 'Belum' });
     setShowModal(true);
   };
 
@@ -122,6 +124,7 @@ const MdisgoMonitoring = () => {
       total_members: item.total_members || 0,
       total_center: item.total_center || 0,
       accessed_center: item.accessed_center || 0,
+      locked_center: item.locked_center || 0,
       status: item.status
     });
     setShowModal(true);
@@ -148,6 +151,7 @@ const MdisgoMonitoring = () => {
         total_members: formData.total_members,
         total_center: formData.total_center,
         accessed_center: formData.accessed_center,
+        locked_center: formData.locked_center,
         status: formData.status
       };
 
@@ -219,6 +223,53 @@ const MdisgoMonitoring = () => {
       b.branch_code.includes(searchQuery)
     )
     .sort((a, b) => b.members_accessed - a.members_accessed || a.branch_name.localeCompare(b.branch_name, 'id'));
+
+  // ── Export CSV ─────────────────────────────────────────────────────────────
+  const handleExportCSV = () => {
+    if (filteredData.length === 0) return;
+
+    const headers = [
+      'No', 'Kode', 'Nama Cabang', 'Tanggal Training',
+      'Total Member', 'Anggota Akses', 'Presentase (%)',
+      'Center Login', 'Center Lock Penarikan', 'Total Center', 'Cakupan Center (%)'
+    ];
+
+    const rows = filteredData.map((b, idx) => {
+      const percentage = b.total_members && b.status !== 'Belum'
+        ? ((b.members_accessed / b.total_members) * 100).toFixed(1)
+        : '-';
+      const cakupan = b.total_center && b.status !== 'Belum'
+        ? ((b.accessed_center / b.total_center) * 100).toFixed(1)
+        : '-';
+      return [
+        idx + 1,
+        `"${b.branch_code}"`,
+        `"${b.branch_name}"`,
+        b.training_date ? `"${formatDate(b.training_date)}"` : '-',
+        b.total_members || 0,
+        b.status === 'Belum' ? '-' : b.members_accessed,
+        percentage,
+        b.accessed_center !== null && b.accessed_center !== undefined ? b.accessed_center : 0,
+        b.locked_center !== null && b.locked_center !== undefined ? b.locked_center : 0,
+        b.total_center || '-',
+        cakupan
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.setAttribute('href', URL.createObjectURL(blob));
+    link.setAttribute('download', `MDISGO_Monitoring${searchQuery ? '_' + searchQuery : ''}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="mdisgo-container">
@@ -343,6 +394,15 @@ const MdisgoMonitoring = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <button
+            className="btn btn-outline mdisgo-btn-add"
+            onClick={handleExportCSV}
+            title="Unduh CSV"
+            style={{ height: '28px', fontSize: '10px', padding: '0 8px' }}
+          >
+            <Download size={12} />
+            <span>CSV</span>
+          </button>
         </div>
 
         <div className="mdisgo-table-wrapper">
@@ -369,6 +429,7 @@ const MdisgoMonitoring = () => {
                   <th style={{ textAlign: 'center' }}>Anggota Akses</th>
                   <th style={{ textAlign: 'center' }}>Presentase</th>
                   <th style={{ textAlign: 'center' }}>Center Login</th>
+                  <th style={{ textAlign: 'center' }}>Center Lock Penarikan</th>
                   <th style={{ textAlign: 'center' }}>Total Center</th>
                   <th style={{ textAlign: 'center' }}>Cakupan Center (%)</th>
                   {isAdmin && <th style={{ width: '50px', textAlign: 'right' }}>Aksi</th>}
@@ -422,6 +483,11 @@ const MdisgoMonitoring = () => {
                     <td style={{ textAlign: 'center' }} data-label="Center Login">
                       <span className="mdisgo-center-val">
                         {branch.accessed_center !== null && branch.accessed_center !== undefined ? branch.accessed_center.toLocaleString('id-ID') : '0'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }} data-label="Center Lock Penarikan">
+                      <span className="mdisgo-center-val">
+                        {branch.locked_center !== null && branch.locked_center !== undefined ? branch.locked_center.toLocaleString('id-ID') : '0'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center' }} data-label="Total Center">
@@ -553,7 +619,7 @@ const MdisgoMonitoring = () => {
               {/* Group 3: Data Center */}
               <div className="mdisgo-form-section">
                 <h4 className="mdisgo-section-title">Data Center</h4>
-                <div className="mdisgo-form-row">
+                <div className="mdisgo-form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                   <div className="mdisgo-form-group">
                     <label>Center Login</label>
                     <input
@@ -561,6 +627,15 @@ const MdisgoMonitoring = () => {
                       min="0"
                       value={formData.accessed_center}
                       onChange={(e) => setFormData(prev => ({ ...prev, accessed_center: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="mdisgo-form-group">
+                    <label>Center Lock Penarikan</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.locked_center}
+                      onChange={(e) => setFormData(prev => ({ ...prev, locked_center: parseInt(e.target.value) || 0 }))}
                     />
                   </div>
                   <div className="mdisgo-form-group">
