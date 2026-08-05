@@ -299,7 +299,7 @@ const StaffProgress = () => {
     const totalRow = [
       '', '', '', '"TOTAL"',
       csvTotalRV, csvTotalUP, csvTotalRD, csvTotalTP, csvTotalSG,
-      `"COUNT : ${csvCountMinggon}"`,
+      csvCountMinggon,
       csvTotalVAL, csvTotalTPK, csvTotalLL,
       '', '', '', ''
     ];
@@ -598,7 +598,7 @@ const StaffProgress = () => {
                   <td className="total-value" data-label="Recalculate Delinquency">{totalRD > 0 ? totalRD : '-'}</td>
                   <td className="total-value" data-label="Transfer Pencairan">{totalTP > 0 ? totalTP : '-'}</td>
                   <td className="total-value" data-label="Salah Generate">{totalSG > 0 ? totalSG : '-'}</td>
-                  <td className="total-value minggon-count" data-label="Minggon" title={`${countMinggon} staf memiliki aktivitas Minggon`}>COUNT : {countMinggon}</td>
+                  <td className="total-value minggon-count" data-label="Minggon" title={`${countMinggon} staf memiliki aktivitas Minggon`}>{countMinggon > 0 ? countMinggon : '-'}</td>
                   <td className="total-value" data-label="Validasi">{totalVAL > 0 ? totalVAL : '-'}</td>
                   <td className="total-value" data-label="Tiket Perbaikan">{totalTPK > 0 ? totalTPK : '-'}</td>
                   <td className="total-value" data-label="Lain-lain">
