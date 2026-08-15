@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck, ClipboardList, BarChart2, Package } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck, ClipboardList, BarChart2, Package, Receipt } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import { supabase } from '../lib/supabase';
 import './Sidebar.css';
@@ -27,6 +27,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [mdisgoOpen, setMdisgoOpen] = React.useState(isMdisgoActive);
   const mdisgoSubmenuRef = useRef<HTMLDivElement>(null);
 
+  // Rekap Pengeluaran accordion state
+  const rekapRoutes = ['/admin/rekap-pengeluaran', '/admin/master-toner'];
+  const isRekapActive = rekapRoutes.some(r => location.pathname.startsWith(r));
+  const [rekapOpen, setRekapOpen] = React.useState(isRekapActive);
+  const rekapSubmenuRef = useRef<HTMLDivElement>(null);
+
   // Keep accordion open if navigating to an arsip route
   useEffect(() => {
     if (isArsipActive) setArsipOpen(true);
@@ -35,6 +41,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // Keep MDISGO accordion open if navigating to an mdisgo route
   useEffect(() => {
     if (isMdisgoActive) setMdisgoOpen(true);
+  }, [location.pathname]);
+
+  // Keep Rekap accordion open if navigating to a rekap route
+  useEffect(() => {
+    if (isRekapActive) setRekapOpen(true);
   }, [location.pathname]);
 
   // Close sidebar on route change (mobile)
@@ -132,14 +143,46 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </>
             )}
             
-            <NavLink to="/admin/rekap-pengeluaran" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Banknote size={16} />
-              <span>Rekap Pengeluaran</span>
-            </NavLink>
-            <NavLink to="/admin/master-toner" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Package size={16} />
-              <span>Master Toner</span>
-            </NavLink>
+            {/* ── Rekap Pengeluaran Accordion ── */}
+            <div className="nav-group">
+              <button
+                className={`nav-item nav-group-trigger ${isRekapActive ? 'active' : ''}`}
+                onClick={() => setRekapOpen(prev => !prev)}
+                aria-expanded={rekapOpen}
+              >
+                <Banknote size={16} />
+                <span>Rekap Pengeluaran</span>
+                <ChevronDown
+                  size={14}
+                  className={`nav-chevron ${rekapOpen ? 'nav-chevron--open' : ''}`}
+                />
+              </button>
+
+              <div
+                ref={rekapSubmenuRef}
+                className="nav-submenu"
+                style={{
+                  maxHeight: rekapOpen
+                    ? `${rekapSubmenuRef.current?.scrollHeight ?? 200}px`
+                    : '0px',
+                }}
+              >
+                <NavLink
+                  to="/admin/rekap-pengeluaran"
+                  className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+                >
+                  <Receipt size={13} />
+                  <span>Rekap Harga</span>
+                </NavLink>
+                <NavLink
+                  to="/admin/master-toner"
+                  className={({ isActive }) => `nav-subitem ${isActive ? 'active' : ''}`}
+                >
+                  <Package size={13} />
+                  <span>Master Toner</span>
+                </NavLink>
+              </div>
+            </div>
             <NavLink to="/admin/data-user" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Users size={16} />
               <span>Data User</span>
