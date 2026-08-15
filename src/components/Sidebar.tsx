@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck, ClipboardList, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileBarChart, LogOut, UserPlus, GraduationCap, Info, X, ClipboardCheck, Banknote, Zap, User, FolderArchive, Activity, ChevronDown, FileText, Banknote as CoinIcon, UserCheck, ClipboardList, BarChart2, Package } from 'lucide-react';
 import KpiParameterModal from './KpiParameterModal';
 import { supabase } from '../lib/supabase';
 import './Sidebar.css';
@@ -135,6 +135,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <NavLink to="/admin/rekap-pengeluaran" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Banknote size={16} />
               <span>Rekap Pengeluaran</span>
+            </NavLink>
+            <NavLink to="/admin/master-toner" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Package size={16} />
+              <span>Master Toner</span>
             </NavLink>
             <NavLink to="/admin/data-user" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Users size={16} />

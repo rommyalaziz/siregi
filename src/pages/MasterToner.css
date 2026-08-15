@@ -1,0 +1,237 @@
+/* ================================================================
+   MasterToner.css — CSS for Master Produk Toner Management
+   ================================================================ */
+
+.master-toner-container {
+  padding: 16px 20px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.master-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  transition: all 0.15s;
+}
+
+.btn-back:hover {
+  background: #f1f5f9;
+  color: #6366f1;
+  border-color: #6366f1;
+}
+
+.master-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.header-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.master-table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.master-table th {
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 700;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.master-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.master-table tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+.inactive-row td {
+  background-color: #fef2f2 !important;
+  opacity: 0.75;
+}
+
+.kategori-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kategori-badge.drum {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.kategori-badge.toner-mono {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.kategori-badge.paket-bundling {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-paket {
+  display: inline-block;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd6fe;
+}
+
+.badge-biasa {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.status-badge-aktif {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #166534;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge-nonaktif {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #991b1b;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Paket toggle box */
+.paket-toggle-box {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #4c1d95;
+}
+
+.isi-paket-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.box-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #1e40af !important;
+}
+
+.isi-paket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sub-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sub-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.sub-field input {
+  padding: 6px 8px;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.preview-text {
+  font-size: 12px;
+  color: #1d4ed8;
+  background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+}
+
+.modal-lg {
+  max-width: 900px;
+}
+
+.log-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: -6px;
+  margin-bottom: 12px;
+}
+
+.text-muted { color: #94a3b8; }
+.text-red { color: #dc2626; }
+.text-green { color: #16a34a; }

@@ -18,6 +18,7 @@ import RekapPengeluaran from './pages/RekapPengeluaran';
 import ArsipDigital from './pages/ArsipDigital';
 import ArsipDigitalForm from './pages/ArsipDigitalForm';
 import LogAktivitas from './pages/LogAktivitas';
+import MasterToner from './pages/MasterToner';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { useActivityTracker } from './hooks/useActivityTracker';
 
@@ -86,6 +87,7 @@ function AppContent() {
         <Route path="/admin/update" element={<SuperAdminRoute><AdminStaffUpdate /></SuperAdminRoute>} />
         <Route path="/admin/data-user" element={<AdminRoute><DataUser /></AdminRoute>} />
         <Route path="/admin/rekap-pengeluaran" element={<AdminRoute><RekapPengeluaran /></AdminRoute>} />
+        <Route path="/admin/master-toner" element={<AdminRoute><MasterToner /></AdminRoute>} />
         <Route path="/admin/log-aktivitas" element={<SuperAdminRoute><LogAktivitas /></SuperAdminRoute>} />
         
         {/* Arsip Digital Module */}
