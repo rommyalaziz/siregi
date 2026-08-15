@@ -947,23 +947,23 @@ const RekapPengeluaran = () => {
           <table className="rekap-table">
             <thead>
               <tr>
-                <th style={{ width: 30 }}></th>
-                <th>No</th>
-                <th>Ref#</th>
-                <th>Code</th>
-                <th>Name</th>
-                <th>PIC Input</th>
-                <th className="text-right">Service</th>
-                <th className="text-right">HDD</th>
-                <th className="text-right">RAM</th>
-                <th className="text-right">Toner</th>
-                <th className="text-right">Mainboard</th>
-                <th className="text-right">Monitor</th>
-                <th className="text-right">UPS</th>
-                <th className="text-right">Lain-lain</th>
-                <th className="text-right col-total">Total</th>
-                <th>Status</th>
-                {isSuperAdmin && <th>Aksi</th>}
+                <th style={{ width: 22 }}></th>
+                <th style={{ width: 28 }}>No</th>
+                <th style={{ width: 100 }}>Ref#</th>
+                <th style={{ width: 38 }}>Code</th>
+                <th style={{ width: 100 }}>Name</th>
+                <th style={{ width: 100 }}>PIC Input</th>
+                <th className="text-right" style={{ width: 72 }}>Service</th>
+                <th className="text-right" style={{ width: 68 }}>HDD</th>
+                <th className="text-right" style={{ width: 68 }}>RAM</th>
+                <th className="text-right" style={{ width: 80 }}>Toner</th>
+                <th className="text-right" style={{ width: 72 }}>Mainboard</th>
+                <th className="text-right" style={{ width: 68 }}>Monitor</th>
+                <th className="text-right" style={{ width: 68 }}>UPS</th>
+                <th className="text-right" style={{ width: 68 }}>Lain-lain</th>
+                <th className="text-right col-total" style={{ width: 80 }}>Total</th>
+                <th style={{ width: 70 }}>Status</th>
+                {isSuperAdmin && <th style={{ width: 54 }} className="col-aksi">Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -1017,10 +1017,10 @@ const RekapPengeluaran = () => {
                             <span className={`status-badge ${sc.cls}`}>{sc.label}</span>
                           </td>
                           {isSuperAdmin && (
-                            <td>
+                            <td className="col-aksi">
                               <div className="action-buttons">
-                                <button className="btn-icon" title="Edit" onClick={() => handleEdit(item)}><Edit size={13} /></button>
-                                <button className="btn-icon delete" title="Hapus" onClick={() => handleDelete(item.id)}><Trash2 size={13} /></button>
+                                <button className="btn-icon" title="Edit" onClick={() => handleEdit(item)}><Edit size={12} /></button>
+                                <button className="btn-icon delete" title="Hapus" onClick={() => handleDelete(item.id)}><Trash2 size={12} /></button>
                               </div>
                             </td>
                           )}

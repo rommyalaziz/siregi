@@ -263,19 +263,19 @@
   width: 100%;
   border-collapse: collapse;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .rekap-table th {
   background: #f1f5f9;
   color: #64748b;
   font-weight: 700;
-  padding: 6px 8px;
+  padding: 5px 5px;
   text-align: left;
   border-bottom: 2px solid #e2e8f0;
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   position: sticky;
   top: 0;
   z-index: 2;
@@ -283,10 +283,10 @@
 }
 
 .rekap-table td {
-  padding: 5px 8px;
+  padding: 4px 5px;
   border-bottom: 1px solid #f1f5f9;
   color: var(--color-text-main, #334155);
-  font-size: 13px;
+  font-size: 11px;
   vertical-align: middle;
 }
 
@@ -350,18 +350,24 @@
 
 /* ref cell  */
 .ref-cell {
-  font-size: 11px;
+  font-size: 10px;
   font-family: 'Courier New', monospace;
   color: #6366f1;
   font-weight: 600;
+  max-width: 100px;
 }
 
 /* name cell */
-.name-cell { min-width: 130px; max-width: 200px; white-space: normal; }
+.name-cell { min-width: 80px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name-cell.bold { font-weight: 700; color: #1e293b; }
 
-/* num cells */
-.num-cell { font-variant-numeric: tabular-nums; }
+/* num cells — force narrow */
+.num-cell {
+  font-variant-numeric: tabular-nums;
+  min-width: 62px;
+  max-width: 90px;
+  text-align: right;
+}
 .bold { font-weight: 700; }
 
 /* loading / empty */
@@ -426,15 +432,30 @@
 .badge-ditolak   { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
 
 /* ── Action Buttons ─────────────────────────────────────────────── */
-.action-buttons { display:flex; gap:4px; align-items:center; }
+.action-buttons { display:flex; gap:3px; align-items:center; }
 .btn-icon {
   background:none; border:none; cursor:pointer;
-  padding: 3px 4px; border-radius:4px; color:#64748b;
+  padding: 2px 3px; border-radius:4px; color:#64748b;
   display:inline-flex; align-items:center;
   transition:background 0.15s, color 0.15s;
 }
 .btn-icon:hover        { background:#f1f5f9; color:var(--color-primary, #6366f1); }
 .btn-icon.delete:hover { background:#fee2e2; color:#ef4444; }
+
+/* Sticky action column — always visible on horizontal scroll */
+.col-aksi {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.06);
+  z-index: 1;
+}
+.rekap-table thead .col-aksi {
+  background: #f1f5f9;
+  z-index: 3;
+}
+.row-expanded td.col-aksi { background: #f0f7ff; }
+.grand-total-row td.col-aksi { background: #dbeafe; }
 
 /* ── Grand Total Row ────────────────────────────────────────────── */
 .grand-total-row {
@@ -445,10 +466,10 @@
 }
 .grand-total-row td {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   color: #1d4ed8;
   border-top: 2px solid #93c5fd;
-  padding: 6px 8px;
+  padding: 5px 5px;
 }
 .total-label-cell {
   text-align: right;
@@ -496,16 +517,16 @@
   background: #e2e8f0;
   color: #475569;
   font-weight: 700;
-  padding: 4px 6px;
-  font-size: 10px;
+  padding: 3px 5px;
+  font-size: 9px;
   text-transform: uppercase;
   border-bottom: 1px solid #cbd5e1;
 }
 
 .sub-rekap-table td {
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .catatan-cell {
