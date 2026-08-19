@@ -350,6 +350,121 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     return rows;
   }, [data, searchQuery, sortBy]);
 
+  const tableTotals = useMemo(() => {
+    if (!processedData.length) return null;
+
+    if (view === 'anggota') {
+      let sumPct = 0;
+      let sumMember = 0;
+      let sumLengkap = 0;
+      let sumKurang = 0;
+      let sumTidakDitemukan = 0;
+      let sumTidakAktif = 0;
+      const sumDocs: Record<string, number> = {
+        '01': 0, '02': 0, '03': 0, '04': 0, '05': 0,
+        '06': 0, '07': 0, '08': 0, '09': 0, '10': 0, '11': 0
+      };
+
+      processedData.forEach(item => {
+        const ang = item.arsip_anggota?.[0];
+        sumPct += ang?.prosentase ?? 0;
+        sumMember += ang?.member ?? 0;
+        sumLengkap += ang?.lengkap ?? 0;
+        sumKurang += ang?.kurang ?? 0;
+        sumTidakDitemukan += ang?.tidak_ditemukan ?? 0;
+        sumTidakAktif += ang?.tidak_aktif ?? 0;
+
+        item.arsip_anggota_detail?.forEach(d => {
+          if (sumDocs[d.kode_dokumen] !== undefined) {
+            sumDocs[d.kode_dokumen] += d.jumlah;
+          }
+        });
+      });
+
+      return {
+        avgPct: sumPct / processedData.length,
+        member: sumMember,
+        lengkap: sumLengkap,
+        kurang: sumKurang,
+        tidakDitemukan: sumTidakDitemukan,
+        tidakAktif: sumTidakAktif,
+        docs: sumDocs,
+      };
+    }
+
+    if (view === 'anggota-masuk') {
+      let sumPct = 0;
+      let sumMember = 0;
+      let sumLengkap = 0;
+      let sumKurang = 0;
+      let sumTidakDitemukan = 0;
+      const sumDocs: Record<string, number> = {
+        '01': 0, '02': 0, '03': 0, '04': 0, '05': 0, '06': 0, '07': 0, '08': 0
+      };
+
+      processedData.forEach(item => {
+        const am = item.arsip_anggota_masuk?.[0];
+        sumPct += am?.prosentase ?? 0;
+        sumMember += am?.member ?? 0;
+        sumLengkap += am?.lengkap ?? 0;
+        sumKurang += am?.kurang ?? 0;
+        sumTidakDitemukan += am?.tidak_ditemukan ?? 0;
+
+        item.arsip_anggota_masuk_detail?.forEach(d => {
+          if (sumDocs[d.kode_dokumen] !== undefined) {
+            sumDocs[d.kode_dokumen] += d.jumlah;
+          }
+        });
+      });
+
+      return {
+        avgPct: sumPct / processedData.length,
+        member: sumMember,
+        lengkap: sumLengkap,
+        kurang: sumKurang,
+        tidakDitemukan: sumTidakDitemukan,
+        docs: sumDocs,
+      };
+    }
+
+    if (view === 'pencairan') {
+      let sumPct = 0;
+      let sumTotalPinjaman = 0;
+      let sumArsipLengkap = 0;
+      let sumNamaFileTidakSesuai = 0;
+      let sumFileTidakLengkap = 0;
+      const sumDocs: Record<string, number> = {
+        '03': 0, '06': 0, '07': 0, '08': 0, '10': 0
+      };
+
+      processedData.forEach(item => {
+        const pen = item.arsip_pencairan?.[0];
+        sumPct += calcPencairanPct(pen ?? null);
+        sumTotalPinjaman += pen?.total_pinjaman ?? 0;
+        sumArsipLengkap += pen?.arsip_lengkap ?? 0;
+        sumNamaFileTidakSesuai += pen?.nama_file_tidak_sesuai ?? 0;
+        sumFileTidakLengkap += pen?.file_tidak_lengkap ?? 0;
+
+        item.arsip_pencairan_detail?.forEach(d => {
+          if (sumDocs[d.kode_dokumen] !== undefined) {
+            sumDocs[d.kode_dokumen] += d.jumlah;
+          }
+        });
+      });
+
+      return {
+        avgPct: sumPct / processedData.length,
+        totalPinjaman: sumTotalPinjaman,
+        arsipLengkap: sumArsipLengkap,
+        namaFileTidakSesuai: sumNamaFileTidakSesuai,
+        fileTidakLengkap: sumFileTidakLengkap,
+        docs: sumDocs,
+      };
+    }
+
+    return null;
+  }, [processedData, view]);
+
   const exportToExcel = () => {
     if (processedData.length === 0) {
       setMessage({ type: 'error', text: 'Tidak ada data untuk diexport.' });
@@ -487,7 +602,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
   const { title: pageTitle, description: pageDesc, sortOptions } = viewConfig[view];
 
   // ── Table columns per view ──
-  const colCount = view === 'anggota' ? 23 : view === 'pencairan' ? 16 : 19;
+  const colCount = view === 'anggota' ? 22 : view === 'pencairan' ? 16 : 19;
 
   // ── Toolbar colors per view ──
   const accentColor = view === 'pencairan' ? '#0ea5e9' : '#6366f1';
@@ -675,7 +790,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                     <>
                       <tr style={{ background: '#f8fafc' }}>
                         <th colSpan={3} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', position: 'sticky', left: 0, zIndex: 31, boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Informasi Cabang</th>
-                        <th colSpan={7} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Arsip</th>
+                        <th colSpan={6} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Arsip</th>
                         <th colSpan={11} style={thStyle({ textAlign: 'center', background: '#f0fdf4', borderBottom: '1px solid #cbd5e1' })}>Kategori Kekurangan</th>
                         <th colSpan={2} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1' })}>Informasi</th>
                       </tr>
@@ -801,144 +916,258 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                         </div>
                       </td>
                     </tr>
-                  ) : processedData.map((item, idx) => {
-                    const anggota = item.arsip_anggota?.[0];
-                    const pencairan = item.arsip_pencairan?.[0];
-                    const anggotaMasuk = item.arsip_anggota_masuk?.[0];
-                    const pctAnggota = anggota?.prosentase ?? 0;
-                    const pctMasuk = anggotaMasuk?.prosentase ?? 0;
-                    const pctPencairan = calcPencairanPct(pencairan ?? null);
-                    const isEven = idx % 2 === 0;
-                    return (
-                      <tr
-                        key={item.id}
-                        style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s', background: isEven ? '#fff' : '#fafafa', verticalAlign: 'middle' }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = '#f0f9ff';
-                          Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = '#f0f9ff'; });
-                        }}
-                        onMouseLeave={e => {
-                          const bg = isEven ? '#fff' : '#fafafa';
-                          e.currentTarget.style.background = bg;
-                          Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = bg; });
-                        }}
-                      >
-                        {/* Sticky cells — offsets: NO=30, KODE=30+44=74, NAMA=30+44+150=224 */}
-                        <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#64748b', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, position: 'sticky', left: 0, zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{idx + 1}</td>
-                        <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', fontFamily: 'monospace', color: '#334155', fontSize: '11px', fontWeight: 700, position: 'sticky', left: '30px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{item.kode_cabang}</td>
-                        {/* Nama Cabang: NO maxWidth, NO overflow:hidden — let column width control it */}
-                        <td style={{ padding: '2px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{item.nama_cabang}</td>
-                        {view === 'anggota' && (() => {
-                          const obj = item.arsip_anggota?.[0];
-                          const getMD = (k: string) => item.arsip_anggota_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
-                          const renderMDVal = (kode: string) => {
-                            const val = getMD(kode);
-                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
-                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
-                          };
-                          return (
-                            <>
-                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctAnggota} /></td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{obj?.member ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{obj?.lengkap ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{obj?.kurang ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_ditemukan ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_aktif ?? 0}</td>
-                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
-                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
-                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
-                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
-                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
-                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
-                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
-                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
-                              <td className={getMD('09') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('09')}</td>
-                              <td className={getMD('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('10')}</td>
-                              <td className={getMD('11') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('11')}</td>
-                            </>
-                          );
-                        })()}
-                        {view === 'anggota-masuk' && (() => {
-                          const getMD = (k: string) => item.arsip_anggota_masuk_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
-                          const renderMDVal = (kode: string) => {
-                            const val = getMD(kode);
-                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
-                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
-                          };
-                          return (
-                            <>
-                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctMasuk} /></td>
-                              {/* Periode Cek: whiteSpace nowrap — col is 160px, fits "01 Jan 2026 – 30 Jun 2026" on 1 line */}
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                                {formatPeriode(anggotaMasuk?.periode)}
-                              </td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.member ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.lengkap ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.kurang ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.tidak_ditemukan ?? 0}</td>
-                              <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
-                              <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
-                              <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
-                              <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
-                              <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
-                              <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
-                              <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
-                              <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
-                            </>
-                          );
-                        })()}
-                        {view === 'pencairan' && (() => {
-                          const getDoc = (k: string) => item.arsip_pencairan_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
-                          const renderArsipVal = (kode: string) => {
-                            const val = getDoc(kode);
-                            if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear — tidak ada tunggakan">✓ 0</span>;
-                            return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
-                          };
+                  ) : (
+                    <>
+                      {processedData.map((item, idx) => {
+                        const anggota = item.arsip_anggota?.[0];
+                        const pencairan = item.arsip_pencairan?.[0];
+                        const anggotaMasuk = item.arsip_anggota_masuk?.[0];
+                        const pctAnggota = anggota?.prosentase ?? 0;
+                        const pctMasuk = anggotaMasuk?.prosentase ?? 0;
+                        const pctPencairan = calcPencairanPct(pencairan ?? null);
+                        const isEven = idx % 2 === 0;
+                        return (
+                          <tr
+                            key={item.id}
+                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s', background: isEven ? '#fff' : '#fafafa', verticalAlign: 'middle' }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = '#f0f9ff';
+                              Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = '#f0f9ff'; });
+                            }}
+                            onMouseLeave={e => {
+                              const bg = isEven ? '#fff' : '#fafafa';
+                              e.currentTarget.style.background = bg;
+                              Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = bg; });
+                            }}
+                          >
+                            {/* Sticky cells — offsets: NO=30, KODE=30+44=74, NAMA=30+44+150=224 */}
+                            <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#64748b', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, position: 'sticky', left: 0, zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{idx + 1}</td>
+                            <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', fontFamily: 'monospace', color: '#334155', fontSize: '11px', fontWeight: 700, position: 'sticky', left: '30px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{item.kode_cabang}</td>
+                            {/* Nama Cabang: NO maxWidth, NO overflow:hidden — let column width control it */}
+                            <td style={{ padding: '2px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{item.nama_cabang}</td>
+                            {view === 'anggota' && (() => {
+                              const obj = item.arsip_anggota?.[0];
+                              const getMD = (k: string) => item.arsip_anggota_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                              const renderMDVal = (kode: string) => {
+                                const val = getMD(kode);
+                                if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
+                                return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
+                              };
+                              return (
+                                <>
+                                  <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctAnggota} /></td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{obj?.member ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{obj?.lengkap ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{obj?.kurang ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_ditemukan ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_aktif ?? 0}</td>
+                                  <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
+                                  <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
+                                  <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
+                                  <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
+                                  <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
+                                  <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
+                                  <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
+                                  <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
+                                  <td className={getMD('09') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('09')}</td>
+                                  <td className={getMD('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('10')}</td>
+                                  <td className={getMD('11') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('11')}</td>
+                                </>
+                              );
+                            })()}
+                            {view === 'anggota-masuk' && (() => {
+                              const getMD = (k: string) => item.arsip_anggota_masuk_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                              const renderMDVal = (kode: string) => {
+                                const val = getMD(kode);
+                                if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
+                                return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
+                              };
+                              return (
+                                <>
+                                  <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctMasuk} /></td>
+                                  {/* Periode Cek: whiteSpace nowrap — col is 160px, fits "01 Jan 2026 – 30 Jun 2026" on 1 line */}
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                    {formatPeriode(anggotaMasuk?.periode)}
+                                  </td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.member ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.lengkap ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.kurang ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{anggotaMasuk?.tidak_ditemukan ?? 0}</td>
+                                  <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
+                                  <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
+                                  <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
+                                  <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
+                                  <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
+                                  <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
+                                  <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
+                                  <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
+                                </>
+                              );
+                            })()}
+                            {view === 'pencairan' && (() => {
+                              const getDoc = (k: string) => item.arsip_pencairan_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+                              const renderArsipVal = (kode: string) => {
+                                const val = getDoc(kode);
+                                if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear — tidak ada tunggakan">✓ 0</span>;
+                                return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
+                              };
 
-                          return (
-                            <>
-                              <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctPencairan} /></td>
-                              {/* Periode Cek: whiteSpace nowrap — col is 160px */}
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                                {formatPeriode(pencairan?.periode).replace(' - ', '–')}
+                              return (
+                                <>
+                                  <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctPencairan} /></td>
+                                  {/* Periode Cek: whiteSpace nowrap — col is 160px */}
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '10px', textAlign: 'center', lineHeight: 1.2, color: '#475569', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                    {formatPeriode(pencairan?.periode).replace(' - ', '–')}
+                                  </td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.total_pinjaman ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#15803d', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.arsip_lengkap ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#f59e0b', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.nama_file_tidak_sesuai ?? 0}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#ef4444', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.file_tidak_lengkap ?? 0}</td>
+                                  <td className={getDoc('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('03')}</td>
+                                  <td className={getDoc('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('06')}</td>
+                                  <td className={getDoc('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('07')}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '12px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{getDoc('08')}</td>
+                                  <td className={getDoc('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('10')}</td>
+                                </>
+                              );
+                            })()}
+                            <td style={{ padding: '2px 4px', color: '#64748b', fontSize: '10px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
+                              {formatDate(
+                                view === 'anggota' ? (item.tanggal_cek_anggota ?? item.tanggal_cek) :
+                                view === 'pencairan' ? (item.tanggal_cek_pencairan ?? item.tanggal_cek) :
+                                (item.tanggal_cek_anggota_masuk ?? item.tanggal_cek)
+                              )}
+                            </td>
+                            <td style={{ padding: '4px 6px', borderBottom: '1px solid #f1f5f9' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                <ActionBtn onClick={() => { setDrawerItem(item); setDrawerOpen(true); }} title="Detail" hoverColor="#6366f1">
+                                  <Eye size={14} />
+                                </ActionBtn>
+                                {isSuperAdmin && <>
+                                  <ActionBtn onClick={() => openEdit(item)} title="Edit" hoverColor="#6366f1">
+                                    <Pencil size={14} />
+                                  </ActionBtn>
+                                  <ActionBtn onClick={() => handleDelete(item)} title="Hapus" hoverColor="#ef4444">
+                                    <Trash2 size={14} />
+                                  </ActionBtn>
+                                </>}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {view === 'anggota' && tableTotals && (
+                        <tr className="total-footer-row">
+                          <td style={{ position: 'sticky', left: 0, zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ position: 'sticky', left: '30px', zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ padding: '4px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 21, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', whiteSpace: 'nowrap' }}>
+                            TOTAL & RATA-RATA
+                          </td>
+                          <td style={{ padding: '2px 4px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', textAlign: 'center', verticalAlign: 'middle' }}>
+                            <MetricCell value={tableTotals.avgPct} />
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.member}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.lengkap}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.kurang}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.tidakDitemukan}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.tidakAktif}
+                          </td>
+                          {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'].map(kode => {
+                            const val = tableTotals.docs[kode] ?? 0;
+                            return (
+                              <td key={kode} style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 700, fontSize: '11px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', color: val > 0 ? 'var(--color-danger, #ef4444)' : '#64748b' }}>
+                                {val}
                               </td>
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.total_pinjaman ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#15803d', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.arsip_lengkap ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#f59e0b', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.nama_file_tidak_sesuai ?? 0}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '11px', color: '#ef4444', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{pencairan?.file_tidak_lengkap ?? 0}</td>
-                              <td className={getDoc('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('03')}</td>
-                              <td className={getDoc('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('06')}</td>
-                              <td className={getDoc('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('07')}</td>
-                              <td style={{ padding: '2px 4px', fontWeight: 600, fontSize: '12px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{getDoc('08')}</td>
-                              <td className={getDoc('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderArsipVal('10')}</td>
-                            </>
-                          );
-                        })()}
-                        <td style={{ padding: '2px 4px', color: '#64748b', fontSize: '10px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                          {formatDate(
-                            view === 'anggota' ? (item.tanggal_cek_anggota ?? item.tanggal_cek) :
-                            view === 'pencairan' ? (item.tanggal_cek_pencairan ?? item.tanggal_cek) :
-                            (item.tanggal_cek_anggota_masuk ?? item.tanggal_cek)
-                          )}
-                        </td>
-                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #f1f5f9' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                            <ActionBtn onClick={() => { setDrawerItem(item); setDrawerOpen(true); }} title="Detail" hoverColor="#6366f1">
-                              <Eye size={14} />
-                            </ActionBtn>
-                            {isSuperAdmin && <>
-                              <ActionBtn onClick={() => openEdit(item)} title="Edit" hoverColor="#6366f1">
-                                <Pencil size={14} />
-                              </ActionBtn>
-                              <ActionBtn onClick={() => handleDelete(item)} title="Hapus" hoverColor="#ef4444">
-                                <Trash2 size={14} />
-                              </ActionBtn>
-                            </>}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            );
+                          })}
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                        </tr>
+                      )}
+
+                      {view === 'anggota-masuk' && tableTotals && (
+                        <tr className="total-footer-row">
+                          <td style={{ position: 'sticky', left: 0, zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ position: 'sticky', left: '30px', zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ padding: '4px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 21, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', whiteSpace: 'nowrap' }}>
+                            TOTAL & RATA-RATA
+                          </td>
+                          <td style={{ padding: '2px 4px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', textAlign: 'center', verticalAlign: 'middle' }}>
+                            <MetricCell value={tableTotals.avgPct} />
+                          </td>
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.member}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.lengkap}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.kurang}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.tidakDitemukan}
+                          </td>
+                          {['01', '02', '03', '04', '05', '06', '07', '08'].map(kode => {
+                            const val = tableTotals.docs[kode] ?? 0;
+                            return (
+                              <td key={kode} style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 700, fontSize: '11px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', color: val > 0 ? 'var(--color-danger, #ef4444)' : '#64748b' }}>
+                                {val}
+                              </td>
+                            );
+                          })}
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                        </tr>
+                      )}
+
+                      {view === 'pencairan' && tableTotals && (
+                        <tr className="total-footer-row">
+                          <td style={{ position: 'sticky', left: 0, zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ position: 'sticky', left: '30px', zIndex: 21, background: '#f8fafc', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ padding: '4px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 21, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', whiteSpace: 'nowrap' }}>
+                            TOTAL & RATA-RATA
+                          </td>
+                          <td style={{ padding: '2px 4px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', textAlign: 'center', verticalAlign: 'middle' }}>
+                            <MetricCell value={tableTotals.avgPct} />
+                          </td>
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#1e293b', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.totalPinjaman}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.arsipLengkap}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.namaFileTidakSesuai}
+                          </td>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                            {tableTotals.fileTidakLengkap}
+                          </td>
+                          {['03', '06', '07', '08', '10'].map(kode => {
+                            const val = tableTotals.docs[kode] ?? 0;
+                            return (
+                              <td key={kode} style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 700, fontSize: '11px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', color: val > 0 ? 'var(--color-danger, #ef4444)' : '#64748b' }}>
+                                {val}
+                              </td>
+                            );
+                          })}
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                          <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
+                        </tr>
+                      )}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
