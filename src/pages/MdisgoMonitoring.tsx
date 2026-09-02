@@ -500,9 +500,8 @@ const MdisgoMonitoring = () => {
       className="mdisgo-container"
       onClick={() => { if (!editingCell) { setSelectedRowId(null); setPasteHint(false); } }}
     >
-      {/* Top bar */}
       {isAdmin && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '8px', marginTop: '2px' }}>
           <button
             className="btn btn-primary mdisgo-btn-add"
             onClick={() => {
@@ -513,10 +512,6 @@ const MdisgoMonitoring = () => {
             <Plus size={12} />
             <span>Tambah Cabang</span>
           </button>
-          <div className="mdisgo-excel-hint">
-            <ClipboardPaste size={11} />
-            <span>Klik baris lalu <kbd>Ctrl+V</kbd> untuk paste dari Excel · <kbd>Dbl-click</kbd> sel untuk edit</span>
-          </div>
         </div>
       )}
 
