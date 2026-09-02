@@ -520,7 +520,7 @@ const MdisgoMonitoring = () => {
       )}
 
       {/* Header */}
-      <div className="mdisgo-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <div className="mdisgo-header">
         <div className="mdisgo-header-titles">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h1>MDISGO</h1>
@@ -554,7 +554,7 @@ const MdisgoMonitoring = () => {
           className="btn btn-outline"
           onClick={handleExportCSV}
           title="Unduh CSV / Excel"
-          style={{ height: '28px', fontSize: '10px', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ height: '28px', fontSize: '10px', padding: '0 8px' }}
         >
           <Download size={12} />
           <span>CSV / Excel</span>
