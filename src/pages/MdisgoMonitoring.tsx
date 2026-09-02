@@ -21,7 +21,7 @@ interface MdisgoBranch {
   status: string;
 }
 
-// ΓöÇΓöÇ Column config for inline editing ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Column config for inline editing ─────────────────────────────────────────
 // Order here = Tab-order AND paste-from-Excel column order
 const EDITABLE_FIELDS: Array<{
   field: keyof MdisgoBranch;
@@ -39,7 +39,7 @@ const EDITABLE_FIELDS: Array<{
   { field: 'total_center',     type: 'number' },
 ];
 
-// ΓöÇΓöÇ Inline Editable Cell ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Inline Editable Cell ──────────────────────────────────────────────────────
 interface EditableCellProps {
   rowId: string;
   field: keyof MdisgoBranch;
@@ -113,7 +113,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
 };
 
 
-// ΓöÇΓöÇ Main Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Main Component ────────────────────────────────────────────────────────────
 const MdisgoMonitoring = () => {
   const [data, setData] = useState<MdisgoBranch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +124,7 @@ const MdisgoMonitoring = () => {
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState('');
   const [_savingInfo, setSavingInfo] = useState(false);
 
-  // ΓöÇΓöÇ Inline edit state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Inline edit state ───────────────────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ rowId: string; field: keyof MdisgoBranch } | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [savingCells, setSavingCells] = useState<Set<string>>(new Set());
@@ -132,7 +132,7 @@ const MdisgoMonitoring = () => {
   const [pasteHint, setPasteHint] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement | null>(null);
 
-  // ΓöÇΓöÇ Add Modal state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Add Modal state ─────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     branch_code: '', branch_name: '', training_date: '',
@@ -146,7 +146,7 @@ const MdisgoMonitoring = () => {
   const user = sessionData ? JSON.parse(sessionData) : null;
   const isAdmin = user?.role?.toLowerCase().includes('admin');
 
-  // ΓöÇΓöÇ Effects ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Effects ─────────────────────────────────────────────────────────────
   useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
@@ -164,7 +164,7 @@ const MdisgoMonitoring = () => {
     }
   }, [editingCell]);
 
-  // ΓöÇΓöÇ Data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Data ─────────────────────────────────────────────────────────────────
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -189,7 +189,7 @@ const MdisgoMonitoring = () => {
     }
   };
 
-  // ΓöÇΓöÇ Summary ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Summary ──────────────────────────────────────────────────────────────
   const totalBranches = data.length;
   const trainedBranches = data.filter(b => b.status !== 'Belum').length;
   const totalMembers = data.reduce((acc, curr) => acc + (curr.members_accessed || 0), 0);
@@ -205,7 +205,7 @@ const MdisgoMonitoring = () => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  // ΓöÇΓöÇ Filtered & sorted data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Filtered & sorted data ───────────────────────────────────────────────
   const filteredData = data
     .filter(b =>
       b.branch_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -213,7 +213,7 @@ const MdisgoMonitoring = () => {
     )
     .sort((a, b) => b.members_accessed - a.members_accessed || a.branch_name.localeCompare(b.branch_name, 'id'));
 
-  // ΓöÇΓöÇ Inline Edit Handlers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Inline Edit Handlers ─────────────────────────────────────────────────
 
   const handleCellDoubleClick = useCallback((rowId: string, field: keyof MdisgoBranch, currentValue: string) => {
     if (!isAdmin) return;
@@ -244,7 +244,7 @@ const MdisgoMonitoring = () => {
       const { error } = await supabase
         .from('mdisgo_branches').update({ [field]: parsedValue }).eq('id', rowId);
       if (error) throw error;
-      setMessage({ type: 'success', text: 'Γ£ô Tersimpan' });
+      setMessage({ type: 'success', text: '✓ Tersimpan' });
     } catch (err: any) {
       // Revert
       setData(prev => prev.map(b => b.id === rowId ? { ...b, [field]: branch[field] } : b));
@@ -295,11 +295,12 @@ const MdisgoMonitoring = () => {
     }
   }, [editingValue, filteredData, handleCellSave]);
 
-  // ΓöÇΓöÇ Paste from Excel (Ctrl+V on row) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Paste from Excel (Ctrl+V on row) ─────────────────────────────────────
   const handleRowPaste = useCallback(async (e: React.ClipboardEvent, startRowId: string) => {
+    // Jika user sedang paste ke dalam input/select saat edit sel, biarkan default
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
-    
+
     e.preventDefault();
     if (!isAdmin) return;
     const text = e.clipboardData.getData('text/plain');
@@ -309,7 +310,7 @@ const MdisgoMonitoring = () => {
     const startIdx = filteredData.findIndex(b => b.id === startRowId);
     if (startIdx === -1) return;
 
-    setMessage({ type: 'success', text: `≡ƒôï Menerapkan ${rows.length} baris dari clipboard...` });
+    setMessage({ type: 'success', text: `📋 Menerapkan ${rows.length} baris dari clipboard...` });
 
     const updates: Array<{ id: string; payload: Partial<MdisgoBranch> }> = [];
     for (let ri = 0; ri < rows.length; ri++) {
@@ -327,7 +328,7 @@ const MdisgoMonitoring = () => {
           if (val) {
             const parts = String(val).split(/[\/\-]/);
             if (parts.length === 3) {
-              // DD/MM/YYYY ΓåÆ YYYY-MM-DD
+              // DD/MM/YYYY → YYYY-MM-DD
               val = parts[0].length === 4
                 ? String(val)
                 : `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
@@ -349,14 +350,14 @@ const MdisgoMonitoring = () => {
       await Promise.all(updates.map(({ id, payload }) =>
         supabase.from('mdisgo_branches').update(payload).eq('id', id)
       ));
-      setMessage({ type: 'success', text: `Γ£ô ${updates.length} baris berhasil dipaste & disimpan.` });
+      setMessage({ type: 'success', text: `✓ ${updates.length} baris berhasil dipaste & disimpan.` });
     } catch (err: any) {
       fetchData();
       setMessage({ type: 'error', text: err.message || 'Gagal menyimpan hasil paste.' });
     }
   }, [isAdmin, filteredData]);
 
-  // ΓöÇΓöÇ Add New Branch ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Add New Branch ────────────────────────────────────────────────────────
   const handleSaveNew = async () => {
     if (!formData.branch_name || !formData.branch_code) {
       setMessage({ type: 'error', text: 'Kode dan nama cabang wajib diisi.' });
@@ -386,7 +387,7 @@ const MdisgoMonitoring = () => {
     }
   };
 
-  // ΓöÇΓöÇ Delete ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async (item: MdisgoBranch) => {
     if (!window.confirm(`Hapus data cabang "${item.branch_name}"?`)) return;
     try {
@@ -399,7 +400,7 @@ const MdisgoMonitoring = () => {
     }
   };
 
-  // ΓöÇΓöÇ Update Date ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Update Date ───────────────────────────────────────────────────────────
   const handleDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value;
     if (!newDate) return;
@@ -417,7 +418,7 @@ const MdisgoMonitoring = () => {
     }
   };
 
-  // ΓöÇΓöÇ Export CSV ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Export CSV ────────────────────────────────────────────────────────────
   const handleExportCSV = () => {
     if (filteredData.length === 0) return;
     const headers = ['No','Kode','Nama Cabang','Tanggal Training','Total Member','Anggota Akses','Login (%)','Center Lock','Lock (%)','Center Login','Total Center','Cakupan (%)'];
@@ -438,7 +439,7 @@ const MdisgoMonitoring = () => {
     document.body.removeChild(link);
   };
 
-  // ΓöÇΓöÇ Progress bar helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Progress bar helper ───────────────────────────────────────────────────
   const renderProgress = (value: number, total: number, status: string) => {
     if (status === 'Belum' || !total) return <span className="mdisgo-center-val">-</span>;
     const pct = (value / total) * 100;
@@ -455,7 +456,7 @@ const MdisgoMonitoring = () => {
     );
   };
 
-  // ΓöÇΓöÇ Lock Progress bar helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Lock Progress bar helper ────────────────────────────────────────────────
   const renderLockProgress = (value: number, total: number, status: string) => {
     if (status === 'Belum' || !total) return <span className="mdisgo-center-val">-</span>;
     const pct = (value / total) * 100;
@@ -472,7 +473,7 @@ const MdisgoMonitoring = () => {
     );
   };
 
-  // ΓöÇΓöÇ Helper to build EditableCell props ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Helper to build EditableCell props ────────────────────────────────────
   const makeCellProps = (branch: MdisgoBranch, field: keyof MdisgoBranch) => {
     const fieldConfig = EDITABLE_FIELDS.find(f => f.field === field)!;
     return {
@@ -493,7 +494,7 @@ const MdisgoMonitoring = () => {
     };
   };
 
-  // ΓöÇΓöÇ Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
       className="mdisgo-container"
@@ -514,13 +515,13 @@ const MdisgoMonitoring = () => {
           </button>
           <div className="mdisgo-excel-hint">
             <ClipboardPaste size={11} />
-            <span>Klik baris lalu <kbd>Ctrl+V</kbd> untuk paste dari Excel ┬╖ <kbd>Dbl-click</kbd> sel untuk edit</span>
+            <span>Klik baris lalu <kbd>Ctrl+V</kbd> untuk paste dari Excel · <kbd>Dbl-click</kbd> sel untuk edit</span>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="mdisgo-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <div className="mdisgo-header">
         <div className="mdisgo-header-titles">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h1>MDISGO</h1>
@@ -554,7 +555,7 @@ const MdisgoMonitoring = () => {
           className="btn btn-outline"
           onClick={handleExportCSV}
           title="Unduh CSV / Excel"
-          style={{ height: '28px', fontSize: '10px', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ height: '28px', fontSize: '10px', padding: '0 8px' }}
         >
           <Download size={12} />
           <span>CSV / Excel</span>
@@ -616,8 +617,8 @@ const MdisgoMonitoring = () => {
       <div style={{ background: 'var(--color-bg-card)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', marginBottom: '8px', fontSize: '10.5px', color: 'var(--color-text-main)' }}>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <strong style={{ color: 'var(--color-primary)' }}>Catatan:</strong>
-          <span>ΓÇó Anggota minimal akses <strong>20%</strong> dari member.</span>
-          <span>ΓÇó Center yang di lock penarikan minimal <strong>10%</strong> dari total center aktif.</span>
+          <span>• Anggota minimal akses <strong>20%</strong> dari member.</span>
+          <span>• Center yang di lock penarikan minimal <strong>10%</strong> dari total center aktif.</span>
         </div>
       </div>
 
@@ -814,7 +815,7 @@ const MdisgoMonitoring = () => {
         {isAdmin && selectedRowId && pasteHint && (
           <div className="mdisgo-paste-bar">
             <ClipboardPaste size={11} />
-            <span>Baris dipilih ΓÇö tekan <kbd>Ctrl+V</kbd> untuk paste dari Excel (multi-baris didukung)</span>
+            <span>Baris dipilih — tekan <kbd>Ctrl+V</kbd> untuk paste dari Excel (multi-baris didukung)</span>
             <button onClick={(e) => { e.stopPropagation(); setSelectedRowId(null); setPasteHint(false); }}>
               <X size={10} />
             </button>
