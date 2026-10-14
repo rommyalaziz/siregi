@@ -26,7 +26,6 @@ interface ArsipDigital {
   created_at: string;
   updated_at: string;
   arsip_anggota?: ArsipAnggota[];
-  arsip_anggota_detail?: ArsipAnggotaDetail[];
   arsip_pencairan?: ArsipPencairan[];
   arsip_pencairan_detail?: ArsipPencairanDetail[];
   arsip_anggota_masuk?: ArsipAnggotaMasuk[];
@@ -55,14 +54,6 @@ interface ArsipAnggotaMasuk {
   tidak_ditemukan: number;
   tidak_aktif: number;
   prosentase: number;
-}
-
-interface ArsipAnggotaDetail {
-  id: string;
-  arsip_id: string;
-  kode_dokumen: string;
-  nama_dokumen: string;
-  jumlah: number;
 }
 
 interface ArsipAnggotaMasukDetail {
@@ -278,7 +269,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         .select(`
           *,
           arsip_anggota (*),
-          arsip_anggota_detail (*),
           arsip_pencairan (*),
           arsip_pencairan_detail (*),
           arsip_anggota_masuk (*),
@@ -350,7 +340,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
     return rows;
   }, [data, searchQuery, sortBy]);
 
-  const tableTotals = useMemo(() => {
+  const tableTotals = useMemo<any>(() => {
     if (!processedData.length) return null;
 
     if (view === 'anggota') {
@@ -360,10 +350,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
       let sumKurang = 0;
       let sumTidakDitemukan = 0;
       let sumTidakAktif = 0;
-      const sumDocs: Record<string, number> = {
-        '01': 0, '02': 0, '03': 0, '04': 0, '05': 0,
-        '06': 0, '07': 0, '08': 0, '09': 0, '10': 0, '11': 0
-      };
 
       processedData.forEach(item => {
         const ang = item.arsip_anggota?.[0];
@@ -373,12 +359,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         sumKurang += ang?.kurang ?? 0;
         sumTidakDitemukan += ang?.tidak_ditemukan ?? 0;
         sumTidakAktif += ang?.tidak_aktif ?? 0;
-
-        item.arsip_anggota_detail?.forEach(d => {
-          if (sumDocs[d.kode_dokumen] !== undefined) {
-            sumDocs[d.kode_dokumen] += d.jumlah;
-          }
-        });
       });
 
       return {
@@ -388,7 +368,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
         kurang: sumKurang,
         tidakDitemukan: sumTidakDitemukan,
         tidakAktif: sumTidakAktif,
-        docs: sumDocs,
       };
     }
 
@@ -471,77 +450,186 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
       return;
     }
 
-    const anggotaDocKeys = new Set<string>();
-    const pencairanDocKeys = new Set<string>();
+    const workbook = utils.book_new();
 
-    processedData.forEach(item => {
-      item.arsip_anggota_detail?.forEach(d => {
-        anggotaDocKeys.add(`[Anggota] ${d.kode_dokumen} - ${d.nama_dokumen}`);
+    // ── View: Arsip Anggota ──
+    if (view === 'anggota') {
+      const sheetData = processedData.map((item, idx) => {
+        const ang = item.arsip_anggota?.[0];
+        return {
+          'No': idx + 1,
+          'Kode Cabang': item.kode_cabang,
+          'Nama Cabang': item.nama_cabang,
+          'Arsip %': ang ? ang.prosentase.toFixed(2) + '%' : '0.00%',
+          'Total Member': ang?.member ?? 0,
+          'Arsip Lengkap': ang?.lengkap ?? 0,
+          'File Kurang': ang?.kurang ?? 0,
+          'Tidak Ditemukan': ang?.tidak_ditemukan ?? 0,
+          'Tidak Aktif': ang?.tidak_aktif ?? 0,
+          'Tgl Cek': formatDate(item.tanggal_cek_anggota ?? item.tanggal_cek),
+        };
       });
-      item.arsip_pencairan_detail?.forEach(d => {
-        pencairanDocKeys.add(`[Pencairan] ${d.kode_dokumen} - ${d.nama_dokumen}`);
-      });
-    });
 
-    const sortedAnggotaDocKeys = Array.from(anggotaDocKeys).sort();
-    const sortedPencairanDocKeys = Array.from(pencairanDocKeys).sort();
+      // Baris TOTAL (sesuai footer tabel)
+      if (tableTotals) {
+        sheetData.push({
+          'No': '' as any,
+          'Kode Cabang': '',
+          'Nama Cabang': 'TOTAL & RATA-RATA',
+          'Arsip %': tableTotals.avgPct.toFixed(2) + '%',
+          'Total Member': tableTotals.member,
+          'Arsip Lengkap': tableTotals.lengkap,
+          'File Kurang': tableTotals.kurang,
+          'Tidak Ditemukan': tableTotals.tidakDitemukan,
+          'Tidak Aktif': tableTotals.tidakAktif,
+          'Tgl Cek': '',
+        });
+      }
 
-    const exportData = processedData.map((item, idx) => {
-      const anggota = item.arsip_anggota?.[0];
-      const pencairan = item.arsip_pencairan?.[0];
-      const pctAnggota = anggota?.prosentase ?? 0;
-      const pctNonKK = anggota?.toleransi_kk ?? 0;
-      const pctPencairan = calcPencairanPct(pencairan ?? null);
+      const ws = utils.json_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 12 }, { wch: 28 }, { wch: 14 },
+        { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 15 },
+      ];
+      utils.book_append_sheet(workbook, ws, 'Arsip Anggota');
+      writeFile(workbook, `Arsip_Anggota_${new Date().toISOString().split('T')[0]}.xlsx`);
+      return;
+    }
 
-      const row: any = {
-        'No': idx + 1,
-        'Kode Cabang': item.kode_cabang,
-        'Nama Cabang': item.nama_cabang,
-        'Tgl Cek (Anggota)': formatDate(item.tanggal_cek_anggota ?? item.tanggal_cek),
-        'Tgl Cek (Anggota Masuk)': formatDate(item.tanggal_cek_anggota_masuk ?? item.tanggal_cek),
-        'Tgl Cek (Pencairan)': formatDate(item.tanggal_cek_pencairan ?? item.tanggal_cek),
-        'Arsip Data Anggota (%)': pctAnggota.toFixed(2) + '%',
-        'Member': anggota?.member ?? 0,
-        'Lengkap (Anggota)': anggota?.lengkap ?? 0,
-        'Kurang (Anggota)': anggota?.kurang ?? 0,
-        'Tdk Ditemukan': anggota?.tidak_ditemukan ?? 0,
-        'Tdk Aktif': anggota?.tidak_aktif ?? 0,
-        'Arsip Anggota (Non-KK) (%)': pctNonKK.toFixed(2) + '%',
-        'Arsip Pencairan (%)': pctPencairan.toFixed(2) + '%',
-        'Periode': pencairan?.periode ?? '-',
-        'Total Pinjaman': pencairan?.total_pinjaman ?? 0,
-        'Arsip Lengkap': pencairan?.arsip_lengkap ?? 0,
-        'Nama File Tdk Sesuai': pencairan?.nama_file_tidak_sesuai ?? 0,
-        'File Tdk Lengkap': pencairan?.file_tidak_lengkap ?? 0,
+    // ── View: Arsip Anggota Masuk ──
+    if (view === 'anggota-masuk') {
+      // Gunakan fixed keys sesuai kolom di tabel (01–08)
+      const fixedDocCols: Record<string, string> = {
+        '01': '01 KTP',
+        '02': '02 KK',
+        '03': '03 PPI',
+        '04': '04 UK',
+        '05': '05 Anggt',
+        '06': '06 Peng',
+        '07': '07 Akad',
+        '08': '08 Mon',
       };
 
-      sortedAnggotaDocKeys.forEach(key => row[key] = 0);
-      item.arsip_anggota_detail?.forEach(d => {
-        row[`[Anggota] ${d.kode_dokumen} - ${d.nama_dokumen}`] = d.jumlah;
+      const sheetData = processedData.map((item, idx) => {
+        const am = item.arsip_anggota_masuk?.[0];
+        const getMD = (k: string) => item.arsip_anggota_masuk_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+        const row: any = {
+          'No': idx + 1,
+          'Kode Cabang': item.kode_cabang,
+          'Nama Cabang': item.nama_cabang,
+          'Arsip %': am ? am.prosentase.toFixed(2) + '%' : '0.00%',
+          'Periode Cek': formatPeriode(am?.periode),
+          'Total Masuk': am?.member ?? 0,
+          'Arsip Lengkap': am?.lengkap ?? 0,
+          'File Kurang': am?.kurang ?? 0,
+          'Tidak Ditemukan': am?.tidak_ditemukan ?? 0,
+        };
+        Object.entries(fixedDocCols).forEach(([kode, label]) => {
+          row[label] = getMD(kode);
+        });
+        row['Tgl Cek'] = formatDate(item.tanggal_cek_anggota_masuk ?? item.tanggal_cek);
+        return row;
       });
 
-      sortedPencairanDocKeys.forEach(key => row[key] = 0);
-      item.arsip_pencairan_detail?.forEach(d => {
-        row[`[Pencairan] ${d.kode_dokumen} - ${d.nama_dokumen}`] = d.jumlah;
+      // Baris TOTAL (sesuai footer tabel)
+      if (tableTotals) {
+        const totalRow: any = {
+          'No': '',
+          'Kode Cabang': '',
+          'Nama Cabang': 'TOTAL & RATA-RATA',
+          'Arsip %': tableTotals.avgPct.toFixed(2) + '%',
+          'Periode Cek': '',
+          'Total Masuk': tableTotals.member,
+          'Arsip Lengkap': tableTotals.lengkap,
+          'File Kurang': tableTotals.kurang,
+          'Tidak Ditemukan': tableTotals.tidakDitemukan,
+        };
+        Object.entries(fixedDocCols).forEach(([kode, label]) => {
+          totalRow[label] = tableTotals.docs?.[kode] ?? 0;
+        });
+        totalRow['Tgl Cek'] = '';
+        sheetData.push(totalRow);
+      }
+
+      const ws = utils.json_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 32 },
+        { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 16 },
+        // 8 kolom dokumen
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 15 },
+      ];
+      utils.book_append_sheet(workbook, ws, 'Arsip Anggota Masuk');
+      writeFile(workbook, `Arsip_AnggotaMasuk_${new Date().toISOString().split('T')[0]}.xlsx`);
+      return;
+    }
+
+    // ── View: Arsip Pencairan ──
+    if (view === 'pencairan') {
+      // Gunakan fixed keys sesuai kolom di tabel (03, 06, 07, 08, 10)
+      const fixedDocCols: Record<string, string> = {
+        '03': '03 PPI',
+        '06': '06 Peng',
+        '07': '07 Akad',
+        '08': '08 Mon',
+        '10': '10 Lain',
+      };
+
+      const sheetData = processedData.map((item, idx) => {
+        const pen = item.arsip_pencairan?.[0];
+        const pct = calcPencairanPct(pen ?? null);
+        const getDoc = (k: string) => item.arsip_pencairan_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
+        const row: any = {
+          'No': idx + 1,
+          'Kode Cabang': item.kode_cabang,
+          'Nama Cabang': item.nama_cabang,
+          'Arsip %': pct.toFixed(2) + '%',
+          'Periode Cek': formatPeriode(pen?.periode),
+          'Total Pinjaman': pen?.total_pinjaman ?? 0,
+          'Arsip Lengkap': pen?.arsip_lengkap ?? 0,
+          'File Tdk Sesuai': pen?.nama_file_tidak_sesuai ?? 0,
+          'File Tdk Lengkap': pen?.file_tidak_lengkap ?? 0,
+        };
+        Object.entries(fixedDocCols).forEach(([kode, label]) => {
+          row[label] = getDoc(kode);
+        });
+        row['Tgl Cek'] = formatDate(item.tanggal_cek_pencairan ?? item.tanggal_cek);
+        return row;
       });
 
-      return row;
-    });
+      // Baris TOTAL (sesuai footer tabel)
+      if (tableTotals) {
+        const totalRow: any = {
+          'No': '',
+          'Kode Cabang': '',
+          'Nama Cabang': 'TOTAL & RATA-RATA',
+          'Arsip %': tableTotals.avgPct.toFixed(2) + '%',
+          'Periode Cek': '',
+          'Total Pinjaman': tableTotals.totalPinjaman,
+          'Arsip Lengkap': tableTotals.arsipLengkap,
+          'File Tdk Sesuai': tableTotals.namaFileTidakSesuai,
+          'File Tdk Lengkap': tableTotals.fileTidakLengkap,
+        };
+        Object.entries(fixedDocCols).forEach(([kode, label]) => {
+          totalRow[label] = tableTotals.docs?.[kode] ?? 0;
+        });
+        totalRow['Tgl Cek'] = '';
+        sheetData.push(totalRow);
+      }
 
-    const workbook = utils.book_new();
-    const wsSummary = utils.json_to_sheet(exportData);
-    const baseCols = [
-      { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-      { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
-      { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }
-    ];
-    const docCols = [
-      ...sortedAnggotaDocKeys.map(() => ({ wch: 25 })),
-      ...sortedPencairanDocKeys.map(() => ({ wch: 25 }))
-    ];
-    wsSummary['!cols'] = [...baseCols, ...docCols];
-    utils.book_append_sheet(workbook, wsSummary, "Summary");
-    writeFile(workbook, `Arsip_Digital_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const ws = utils.json_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 32 },
+        { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 16 },
+        // 5 kolom dokumen
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 15 },
+      ];
+      utils.book_append_sheet(workbook, ws, 'Arsip Pencairan');
+      writeFile(workbook, `Arsip_Pencairan_${new Date().toISOString().split('T')[0]}.xlsx`);
+      return;
+    }
   };
 
   // ── Stats per view ──
@@ -602,7 +690,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
   const { title: pageTitle, description: pageDesc, sortOptions } = viewConfig[view];
 
   // ── Table columns per view ──
-  const colCount = view === 'anggota' ? 22 : view === 'pencairan' ? 16 : 19;
+  const colCount = view === 'anggota' ? 10 : view === 'pencairan' ? 16 : 19;
 
   // ── Toolbar colors per view ──
   const accentColor = view === 'pencairan' ? '#0ea5e9' : '#6366f1';
@@ -791,35 +879,22 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                       <tr style={{ background: '#f8fafc' }}>
                         <th colSpan={3} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', position: 'sticky', left: 0, zIndex: 31, boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Informasi Cabang</th>
                         <th colSpan={6} style={thStyle({ textAlign: 'center', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' })}>Progress Arsip</th>
-                        <th colSpan={11} style={thStyle({ textAlign: 'center', background: '#f0fdf4', borderBottom: '1px solid #cbd5e1' })}>Kategori Kekurangan</th>
                         <th colSpan={2} style={thStyle({ textAlign: 'center', background: '#f8fafc', borderBottom: '1px solid #cbd5e1' })}>Informasi</th>
                       </tr>
                       <tr style={{ background: '#f8fafc' }}>
-                        <th style={thStyle({ width: '30px', textAlign: 'center', position: 'sticky', left: 0, zIndex: 31, background: '#f8fafc' })}>No</th>
-                        <th style={thStyle({ width: '44px', textAlign: 'center', position: 'sticky', left: '30px', zIndex: 31, background: '#f8fafc' })}>Kode</th>
-                        <th style={thStyle({ width: '150px', position: 'sticky', left: '74px', zIndex: 31, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Nama Cabang</th>
+                        <th style={thStyle({ width: '50px', textAlign: 'center', position: 'sticky', left: 0, zIndex: 31, background: '#f8fafc' })}>No</th>
+                        <th style={thStyle({ width: '70px', textAlign: 'center', position: 'sticky', left: '50px', zIndex: 31, background: '#f8fafc' })}>Kode</th>
+                        <th style={thStyle({ width: '250px', position: 'sticky', left: '120px', zIndex: 31, background: '#f8fafc', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)' })}>Nama Cabang</th>
                         {/* Progress cols */}
-                        <th style={thStyle({ width: '105px', textAlign: 'center', background: '#f1f5f9' })}>Arsip %</th>
-                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#e0f2fe' })}>Total<br/>Member</th>
-                        <th style={thStyle({ width: '52px', textAlign: 'center', background: '#dcfce7' })}>Arsip<br/>Lengkap</th>
-                        <th style={thStyle({ width: '46px', textAlign: 'center', background: '#fef9c3' })}>File<br/>Kurang</th>
-                        <th style={thStyle({ width: '58px', textAlign: 'center', background: '#fee2e2' })}>Tidak<br/>Ditemukan</th>
-                        <th style={thStyle({ width: '58px', textAlign: 'center', background: '#f3f4f6' })}>Tidak<br/>Aktif</th>
-                        {/* Kategori cols: 38px each × 11 */}
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>01<br/>KTP</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>02<br/>KK</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>03<br/>PPI</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>04<br/>UK</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>05<br/>Anggt</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>06<br/>Peng</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>07<br/>Akad</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>08<br/>Mon</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>09<br/>SHR</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>10<br/>Lain</th>
-                        <th style={thStyle({ width: '38px', textAlign: 'center', background: '#f0fdf4' })}>11<br/>Cuti</th>
+                        <th style={thStyle({ width: '150px', textAlign: 'center', background: '#f1f5f9' })}>Arsip %</th>
+                        <th style={thStyle({ width: '100px', textAlign: 'center', background: '#e0f2fe' })}>Total<br/>Member</th>
+                        <th style={thStyle({ width: '100px', textAlign: 'center', background: '#dcfce7' })}>Arsip<br/>Lengkap</th>
+                        <th style={thStyle({ width: '100px', textAlign: 'center', background: '#fef9c3' })}>File<br/>Kurang</th>
+                        <th style={thStyle({ width: '100px', textAlign: 'center', background: '#fee2e2' })}>Tidak<br/>Ditemukan</th>
+                        <th style={thStyle({ width: '100px', textAlign: 'center', background: '#fce7f3' })}>Tidak<br/>Aktif</th>
                         {/* Info cols */}
-                        <th style={thStyle({ width: '74px', textAlign: 'center', background: '#f8fafc' })}>Tgl Cek</th>
-                        <th style={thStyle({ width: '50px', textAlign: 'center', background: '#f8fafc' })}>Aksi</th>
+                        <th style={thStyle({ width: '120px', textAlign: 'center', background: '#f8fafc' })}>Tgl Cek</th>
+                        <th style={thStyle({ width: '80px', textAlign: 'center', background: '#f8fafc' })}>Aksi</th>
                       </tr>
                     </>
                   ) : view === 'anggota-masuk' ? (
@@ -940,19 +1015,13 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                               Array.from(e.currentTarget.children).forEach((c: any) => { if(c.style.position === 'sticky') c.style.background = bg; });
                             }}
                           >
-                            {/* Sticky cells — offsets: NO=30, KODE=30+44=74, NAMA=30+44+150=224 */}
+                            {/* Sticky cells — offsets: NO=50, KODE=50+70=120, NAMA=120+250=370 */}
                             <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#64748b', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, position: 'sticky', left: 0, zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{idx + 1}</td>
-                            <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', fontFamily: 'monospace', color: '#334155', fontSize: '11px', fontWeight: 700, position: 'sticky', left: '30px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{item.kode_cabang}</td>
+                            <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', fontFamily: 'monospace', color: '#334155', fontSize: '11px', fontWeight: 700, position: 'sticky', left: '50px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}>{item.kode_cabang}</td>
                             {/* Nama Cabang: NO maxWidth, NO overflow:hidden — let column width control it */}
-                            <td style={{ padding: '2px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '74px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{item.nama_cabang}</td>
+                            <td style={{ padding: '2px 6px', fontWeight: 800, color: '#020617', fontSize: '11px', verticalAlign: 'middle', position: 'sticky', left: '120px', zIndex: 20, background: isEven ? '#fff' : '#fafafa', boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{item.nama_cabang}</td>
                             {view === 'anggota' && (() => {
                               const obj = item.arsip_anggota?.[0];
-                              const getMD = (k: string) => item.arsip_anggota_detail?.find(d => d.kode_dokumen === k)?.jumlah ?? 0;
-                              const renderMDVal = (kode: string) => {
-                                const val = getMD(kode);
-                                if (val === 0) return <span className="arsip-zero-badge" style={{ padding: '0 4px', fontSize: '9px', lineHeight: '14px', height: '14px' }} title="Clear">✓ 0</span>;
-                                return <span className="arsip-nonzero-val" style={{ fontSize: '12px' }}>{val}</span>;
-                              };
                               return (
                                 <>
                                   <td style={{ padding: '2px 4px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', verticalAlign: 'middle' }}><MetricCell value={pctAnggota} /></td>
@@ -960,18 +1029,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                                   <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#15803d', borderBottom: '1px solid #f1f5f9' }}>{obj?.lengkap ?? 0}</td>
                                   <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#d97706', borderBottom: '1px solid #f1f5f9' }}>{obj?.kurang ?? 0}</td>
                                   <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_ditemukan ?? 0}</td>
-                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_aktif ?? 0}</td>
-                                  <td className={getMD('01') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('01')}</td>
-                                  <td className={getMD('02') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('02')}</td>
-                                  <td className={getMD('03') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('03')}</td>
-                                  <td className={getMD('04') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('04')}</td>
-                                  <td className={getMD('05') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('05')}</td>
-                                  <td className={getMD('06') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('06')}</td>
-                                  <td className={getMD('07') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('07')}</td>
-                                  <td className={getMD('08') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('08')}</td>
-                                  <td className={getMD('09') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('09')}</td>
-                                  <td className={getMD('10') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('10')}</td>
-                                  <td className={getMD('11') === 0 ? 'clear-arsip-cell' : undefined} style={{ padding: '2px 4px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>{renderMDVal('11')}</td>
+                                  <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#9333ea', borderBottom: '1px solid #f1f5f9' }}>{obj?.tidak_aktif ?? 0}</td>
                                 </>
                               );
                             })()}
@@ -1079,17 +1137,10 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                           <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#dc2626', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
                             {tableTotals.tidakDitemukan}
                           </td>
-                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#64748b', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
+                          <td style={{ padding: '2px 4px', fontWeight: 700, fontSize: '11px', textAlign: 'center', color: '#9333ea', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}>
                             {tableTotals.tidakAktif}
                           </td>
-                          {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'].map(kode => {
-                            const val = tableTotals.docs[kode] ?? 0;
-                            return (
-                              <td key={kode} style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 700, fontSize: '11px', borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)', color: val > 0 ? 'var(--color-danger, #ef4444)' : '#64748b' }}>
-                                {val}
-                              </td>
-                            );
-                          })}
+
                           <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
                           <td style={{ borderTop: '2px solid var(--color-border)', borderBottom: '2px solid var(--color-border)' }}></td>
                         </tr>
@@ -1217,7 +1268,7 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                     { label: 'Lengkap', val: ang?.lengkap, color: 's-green' },
                     { label: 'Kurang', val: ang?.kurang, color: 's-yellow' },
                     { label: 'Tdk Ditemukan', val: ang?.tidak_ditemukan, color: 's-red' },
-                    { label: 'Tdk Aktif', val: ang?.tidak_aktif, color: '' },
+                    { label: 'Tdk Aktif', val: ang?.tidak_aktif, color: 's-purple' },
                   ].map(({ label, val, color }) => (
                     <div key={label} className={`arsip-summary-item ${color}`}>
                       <div className="s-label">{label}</div>
@@ -1225,29 +1276,6 @@ const ArsipDigital = ({ view = 'anggota' }: { view?: ArsipView }) => {
                     </div>
                   ))}
                 </div>
-                {(drawerItem.arsip_anggota_detail?.length ?? 0) > 0 && (
-                  <>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Detail Dokumen Anggota (Kurang)
-                    </div>
-                    <table className="arsip-detail-doc-table">
-                      <thead><tr><th>Kode</th><th>Nama Dokumen</th><th style={{ textAlign: 'right' }}>Jumlah Kurang</th></tr></thead>
-                      <tbody>
-                        {drawerItem.arsip_anggota_detail!
-                          .sort((a, b) => a.kode_dokumen.localeCompare(b.kode_dokumen))
-                          .map(d => (
-                          <tr key={d.id}>
-                            <td className="mono">{d.kode_dokumen}</td>
-                            <td>{d.nama_dokumen}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: d.jumlah > 0 ? 'var(--color-danger)' : 'inherit' }}>
-                              {d.jumlah}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
               </div>
 
               {/* Section 2: Arsip Anggota Masuk */}

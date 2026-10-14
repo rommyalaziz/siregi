@@ -8,19 +8,6 @@ import './ArsipDigital.css';
 type FormType = 'anggota' | 'pencairan' | 'anggota-masuk';
 interface CabangOption { id: string; nama_cabang: string; kode_cabang: string; }
 
-const DEFAULT_ANGGOTA_DOCS = [
-  { kode_dokumen: '01', nama_dokumen: 'KTP', jumlah: 0 },
-  { kode_dokumen: '02', nama_dokumen: 'KK', jumlah: 0 },
-  { kode_dokumen: '03', nama_dokumen: 'PPI', jumlah: 0 },
-  { kode_dokumen: '04', nama_dokumen: 'Form UK', jumlah: 0 },
-  { kode_dokumen: '05', nama_dokumen: 'Form Keanggotaan', jumlah: 0 },
-  { kode_dokumen: '06', nama_dokumen: 'Form Pengajuan', jumlah: 0 },
-  { kode_dokumen: '07', nama_dokumen: 'Form Akad', jumlah: 0 },
-  { kode_dokumen: '08', nama_dokumen: 'Form Monitoring', jumlah: 0 },
-  { kode_dokumen: '09', nama_dokumen: 'Form Simpanan Hari Raya', jumlah: 0 },
-  { kode_dokumen: '10', nama_dokumen: 'Form Lainnya', jumlah: 0 },
-  { kode_dokumen: '11', nama_dokumen: 'Form Cuti', jumlah: 0 },
-];
 const DEFAULT_ANGGOTA_MASUK_DOCS = [
   { kode_dokumen: '01', nama_dokumen: 'KTP', jumlah: 0 },
   { kode_dokumen: '02', nama_dokumen: 'KK', jumlah: 0 },
@@ -165,10 +152,17 @@ const ArsipDigitalForm = () => {
   const [saving, setSaving]     = useState(false);
   const [message, setMessage]   = useState({ type: '', text: '' });
 
+  // Default values untuk mode Tambah (bukan Edit)
+  const DEFAULT_TGL_CEK         = !isEdit ? '2026-10-01' : '';
+  const DEFAULT_PERIODE_PENCAIRAN_FROM = !isEdit ? '2026-07-01' : '';
+  const DEFAULT_PERIODE_PENCAIRAN_TO   = !isEdit ? '2026-09-30' : '';
+  const DEFAULT_PERIODE_AM_FROM        = !isEdit ? '2026-01-01' : '';
+  const DEFAULT_PERIODE_AM_TO          = !isEdit ? '2026-09-30' : '';
+
   const [selectedCabangId, setSelectedCabangId] = useState('');
   const [kode, setKode]         = useState('');
   const [nama, setNama]         = useState('');
-  const [tglCek, setTglCek]     = useState('');
+  const [tglCek, setTglCek]     = useState(DEFAULT_TGL_CEK);
 
   /* anggota */
   const [member, setMember] = useState<number | string>(0);
@@ -177,15 +171,14 @@ const ArsipDigitalForm = () => {
   const [tidakDitemukan, setTidakDitemukan] = useState<number | string>(0);
   const [tidakAktif, setTidakAktif] = useState<number | string>(0);
   const [prosentase, setProsentase] = useState<string | number>(0);
-  const [anggotaDocs, setAnggotaDocs] = useState(DEFAULT_ANGGOTA_DOCS.map(d => ({ ...d })));
 
   /* anggota masuk */
   const [mMasuk, setMMasuk] = useState<number | string>(0);  // Anggota Masuk
   const [lMasuk, setLMasuk] = useState<number | string>(0);
   const [kMasuk, setKMasuk] = useState<number | string>(0);
   const [tdMasuk, setTdMasuk] = useState<number | string>(0);
-  const [periodeAMFrom, setPeriodeAMFrom] = useState('');
-  const [periodeAMTo, setPeriodeAMTo] = useState('');
+  const [periodeAMFrom, setPeriodeAMFrom] = useState(DEFAULT_PERIODE_AM_FROM);
+  const [periodeAMTo, setPeriodeAMTo] = useState(DEFAULT_PERIODE_AM_TO);
   const [masukDocs, setMasukDocs] = useState(DEFAULT_ANGGOTA_MASUK_DOCS.map(d => ({ ...d })));
   // Prosentase otomatis: Lengkap / Anggota Masuk × 100
   const pctMasuk = Number(mMasuk) > 0 ? ((Number(lMasuk) / Number(mMasuk)) * 100).toFixed(2) : '0.00';
@@ -202,8 +195,8 @@ const ArsipDigitalForm = () => {
     : '';
 
   /* pencairan */
-  const [periodePencairanFrom, setPeriodePencairanFrom] = useState('');
-  const [periodePencairanTo, setPeriodePencairanTo] = useState('');
+  const [periodePencairanFrom, setPeriodePencairanFrom] = useState(DEFAULT_PERIODE_PENCAIRAN_FROM);
+  const [periodePencairanTo, setPeriodePencairanTo] = useState(DEFAULT_PERIODE_PENCAIRAN_TO);
   const periodePencairanLabel = periodePencairanFrom && periodePencairanTo
     ? `${formatDateLabel(periodePencairanFrom)} - ${formatDateLabel(periodePencairanTo)}`
     : periodePencairanFrom ? formatDateLabel(periodePencairanFrom)
@@ -223,7 +216,7 @@ const ArsipDigitalForm = () => {
         try {
           const { data: row, error } = await supabase
             .from('arsip_digital')
-            .select('*, arsip_anggota(*), arsip_anggota_detail(*), arsip_pencairan(*), arsip_pencairan_detail(*), arsip_anggota_masuk(*), arsip_anggota_masuk_detail(*)')
+            .select('*, arsip_anggota(*), arsip_pencairan(*), arsip_pencairan_detail(*), arsip_anggota_masuk(*), arsip_anggota_masuk_detail(*)')
             .eq('id', id).single();
           if (error) throw error;
           setKode(row.kode_cabang); setNama(row.nama_cabang);
@@ -234,7 +227,6 @@ const ArsipDigitalForm = () => {
           if (formType === 'anggota') {
             const a = row.arsip_anggota?.[0];
             if (a) { setMember(a.member); setLengkap(a.lengkap); setKurang(a.kurang); setTidakDitemukan(a.tidak_ditemukan); setTidakAktif(a.tidak_aktif); setProsentase(a.prosentase); }
-            setAnggotaDocs(DEFAULT_ANGGOTA_DOCS.map(def => { const ex = row.arsip_anggota_detail?.find((d: any) => d.kode_dokumen === def.kode_dokumen); return { ...def, jumlah: ex?.jumlah || 0 }; }));
           }
           if (formType === 'anggota-masuk') {
             const am = row.arsip_anggota_masuk?.[0];
@@ -294,8 +286,8 @@ const ArsipDigitalForm = () => {
         arsipId = id;
         
         if (formType === 'anggota') {
-          const [d1, d2] = await Promise.all([supabase.from('arsip_anggota').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_detail').delete().eq('arsip_id', arsipId)]);
-          if (d1.error) throw d1.error; if (d2.error) throw d2.error;
+          const { error: d1Error } = await supabase.from('arsip_anggota').delete().eq('arsip_id', arsipId);
+          if (d1Error) throw d1Error;
         }
         if (formType === 'anggota-masuk') {
           const [d1, d2] = await Promise.all([supabase.from('arsip_anggota_masuk').delete().eq('arsip_id', arsipId), supabase.from('arsip_anggota_masuk_detail').delete().eq('arsip_id', arsipId)]);
@@ -311,12 +303,8 @@ const ArsipDigitalForm = () => {
         arsipId = nr.id;
       }
       if (formType === 'anggota') {
-        const [r1, r2] = await Promise.all([
-          supabase.from('arsip_anggota').insert([{ arsip_id: arsipId, member: Number(member)||0, lengkap: Number(lengkap)||0, kurang: Number(kurang)||0, tidak_ditemukan: Number(tidakDitemukan)||0, tidak_aktif: Number(tidakAktif)||0, prosentase: Number(prosentase)||0, toleransi_kk: 0 }]),
-          supabase.from('arsip_anggota_detail').insert(anggotaDocs.map(d => ({ arsip_id: arsipId, kode_dokumen: d.kode_dokumen, nama_dokumen: d.nama_dokumen, jumlah: Number(d.jumlah)||0 }))),
-        ]);
-        if (r1.error) throw r1.error;
-        if (r2.error) throw r2.error;
+        const { error: r1Error } = await supabase.from('arsip_anggota').insert([{ arsip_id: arsipId, member: Number(member)||0, lengkap: Number(lengkap)||0, kurang: Number(kurang)||0, tidak_ditemukan: Number(tidakDitemukan)||0, tidak_aktif: Number(tidakAktif)||0, prosentase: Number(prosentase)||0, toleransi_kk: 0 }]);
+        if (r1Error) throw r1Error;
       }
       if (formType === 'anggota-masuk') {
         const periodeAMVal = periodeAMFrom && periodeAMTo ? `${periodeAMFrom} sd ${periodeAMTo}` : (periodeAMFrom || '');
@@ -439,8 +427,6 @@ const ArsipDigitalForm = () => {
                 />
               </div>
             </div>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.3px', margin: '8px 0 2px' }}>Detail Dokumen (Jumlah Kurang)</div>
-            <DocTable docs={anggotaDocs} onUpdate={updDoc(anggotaDocs, setAnggotaDocs)} />
           </>)}
 
           {/* === ANGGOTA MASUK === */}

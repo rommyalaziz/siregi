@@ -544,6 +544,7 @@
 .arsip-summary-item.s-green  .s-value { color: var(--color-success); }
 .arsip-summary-item.s-yellow .s-value { color: var(--color-warning); }
 .arsip-summary-item.s-red    .s-value { color: var(--color-danger);  }
+.arsip-summary-item.s-purple .s-value { color: #9333ea;              }
 
 .arsip-score-bar { margin-bottom: 14px; }
 
